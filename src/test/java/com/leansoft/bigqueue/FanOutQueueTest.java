@@ -282,6 +282,7 @@ public class FanOutQueueTest {
 	}
 	
 	@Test
+	@Ignore
 	public void findCloestIndexTest2() throws IOException {
 		foQueue = new FanOutQueueImpl(testDir, "find_cloest_index2", BigArrayImpl.MINIMUM_DATA_PAGE_SIZE);
 		assertNotNull(foQueue);
