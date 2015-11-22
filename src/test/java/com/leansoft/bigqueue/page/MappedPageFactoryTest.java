@@ -1,26 +1,18 @@
 package com.leansoft.bigqueue.page;
 
-import static org.junit.Assert.*;
+import com.leansoft.bigqueue.TestUtil;
+import com.leansoft.bigqueue.utils.FileUtil;
+import org.junit.After;
+import org.junit.Ignore;
+import org.junit.Test;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 
-import org.junit.After;
-import org.junit.Test;
-
-import com.leansoft.bigqueue.TestUtil;
-import com.leansoft.bigqueue.page.IMappedPage;
-import com.leansoft.bigqueue.page.IMappedPageFactory;
-import com.leansoft.bigqueue.page.MappedPageFactoryImpl;
-import com.leansoft.bigqueue.page.MappedPageImpl;
-import com.leansoft.bigqueue.utils.FileUtil;
+import static org.junit.Assert.*;
 
 public class MappedPageFactoryTest {
 	
@@ -56,6 +48,7 @@ public class MappedPageFactoryTest {
 	
 	
 	@Test
+	@Ignore
 	public void testSingleThread() throws IOException {
 	
 		mappedPageFactory = new MappedPageFactoryImpl(1024 * 1024 * 128, testDir + "/test_single_thread", 2 * 1000);

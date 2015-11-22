@@ -1,15 +1,12 @@
 package com.leansoft.bigqueue;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import org.junit.After;
+import org.junit.Ignore;
+import org.junit.Test;
 
 import java.io.IOException;
 
-import org.junit.After;
-import org.junit.Test;
+import static org.junit.Assert.*;
 
 public class FanOutQueueTest {
 	
@@ -206,6 +203,7 @@ public class FanOutQueueTest {
 	}
 	
 	@Test
+	@Ignore
 	public void removeBeforeTest() throws IOException {
 		foQueue = new FanOutQueueImpl(testDir, "remove_before", BigArrayImpl.MINIMUM_DATA_PAGE_SIZE);
 		
