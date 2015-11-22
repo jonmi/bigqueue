@@ -20,12 +20,6 @@ public interface IFanOutQueue extends Closeable {
 	 */
 	public static final long LATEST = -2;
 	
-	/**
-	 * Determines whether a fan out queue is empty
-	 * 
-	 * @param fanoutId the fanout identifier
-	 * @return true if empty, false otherwise
-	 */
 	public boolean isEmpty(String fanoutId) throws IOException;
 	
 	/**
@@ -109,12 +103,6 @@ public interface IFanOutQueue extends Closeable {
 	 */
 	public long getTimestamp(long index) throws IOException;
 	
-	/**
-	 * Total number of items remaining in the fan out queue
-	 * 
-	 * @param fanoutId the fanout identifier
-	 * @return total number
-	 */
 	public long size(String fanoutId) throws IOException ;
 	
 	
@@ -174,20 +162,8 @@ public interface IFanOutQueue extends Closeable {
      */
     long findClosestIndex(long timestamp) throws IOException;
     
-    /**
-     * Reset the front index of a fanout queue.
-     * 
-     * @param fandoutId fanout identifier
-     * @param index target index
-     * @throws IOException exception thrown during the operation
-     */
     void resetQueueFrontIndex(String fanoutId, long index) throws IOException;
     
-	/**
-	 * Removes all items of a queue, this will empty the queue and delete all back data files.
-	 * 
-	 * @throws IOException exception throws if there is any IO error during dequeue operation.
-	 */
 	public void removeAll() throws IOException;
 	
 	/**
@@ -197,12 +173,6 @@ public interface IFanOutQueue extends Closeable {
 	 */
 	public long getFrontIndex();
 	
-	/**
-	 * Get front index of specific fanout queue
-	 * 
-	 * @param fanoutId fanout identifier
-	 * @return an index
-	 */
 	public long getFrontIndex(String fanoutId) throws IOException;
 	
 	/**

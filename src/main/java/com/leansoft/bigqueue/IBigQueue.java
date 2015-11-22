@@ -71,12 +71,6 @@ public interface IBigQueue extends Closeable {
      */
     public ListenableFuture<byte[]> peekAsync();
 
-    /**
-     * apply an implementation of a ItemIterator interface for each queue item
-     *
-     * @param iterator
-     * @throws IOException
-     */
     public void applyForEach(ItemIterator iterator) throws IOException;
 	
 	/**
@@ -111,12 +105,7 @@ public interface IBigQueue extends Closeable {
 	 * Item iterator interface
 	 */
 	public static interface ItemIterator {
-        /**
-         * Method to be executed for each queue item
-         *
-         * @param item queue item
-         * @throws IOException
-         */
-        public void forEach(byte[] item) throws IOException;
+
+		public void forEach(byte[] item) throws IOException;
     }
 }

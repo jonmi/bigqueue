@@ -1,5 +1,10 @@
 package com.leansoft.bigqueue;
 
+import com.leansoft.bigqueue.page.IMappedPage;
+import com.leansoft.bigqueue.page.IMappedPageFactory;
+import com.leansoft.bigqueue.page.MappedPageFactoryImpl;
+import com.leansoft.bigqueue.utils.FolderNameValidator;
+
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.concurrent.ConcurrentHashMap;
@@ -8,18 +13,13 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
-import com.leansoft.bigqueue.page.IMappedPage;
-import com.leansoft.bigqueue.page.IMappedPageFactory;
-import com.leansoft.bigqueue.page.MappedPageFactoryImpl;
-import com.leansoft.bigqueue.utils.FolderNameValidator;
-
 
 /**
  * A big, fast and persistent queue implementation supporting fan out semantics.
  *  
  * Main features:
  * 1. FAST : close to the speed of direct memory access, both enqueue and dequeue are close to O(1) memory access.
- * 2. MEMORY-EFFICIENT : automatic paging & swapping algorithm, only most-recently accessed data is kept in memory.
+ * 2. MEMORY-EFFICIENT : automatic paging and swapping algorithm, only most-recently accessed data is kept in memory.
  * 3. THREAD-SAFE : multiple threads can concurrently enqueue and dequeue without data corruption.
  * 4. PERSISTENT - all data in queue is persisted on disk, and is crash resistant.
  * 5. BIG(HUGE) - the total size of the queued data is only limited by the available disk space.

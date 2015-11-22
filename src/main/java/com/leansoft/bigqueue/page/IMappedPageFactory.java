@@ -37,11 +37,6 @@ public interface IMappedPageFactory {
 	 */
 	int getPageSize();
 	
-	/**
-	 * Current set page directory.
-	 * 
-	 * @return
-	 */
 	String getPageDir();
 	
 	/**
@@ -54,14 +49,6 @@ public interface IMappedPageFactory {
 	 */
 	void deletePage(long index) throws IOException;
 	
-	/**
-	 * delete mapped pages with a set of specific indexes in this factory,
-	 * this call will remove the pages from the cache if they ware cached and
-	 * delete back files.
-	 * 
-	 * @param indexes the indexes of the pages
-	 * @throws IOException
-	 */
 	void deletePages(Set<Long> indexes) throws IOException;
 	
 	/**
@@ -103,11 +90,6 @@ public interface IMappedPageFactory {
      */
     void deletePagesBeforePageIndex(long pageIndex) throws IOException;
 
-	/**
-	 * Get last modified timestamp of page file index
-	 * 
-	 * @param index page index
-	 */
 	long getPageFileLastModifiedTime(long index);
 	
 	/**

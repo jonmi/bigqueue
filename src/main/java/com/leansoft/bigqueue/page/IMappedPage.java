@@ -27,25 +27,10 @@ public interface IMappedPage {
 	 */
 	public byte[] getLocal(int position, int length);
 	
-	/**
-	 * Check if this mapped page has been closed or not
-	 * 
-	 * @return
-	 */
 	boolean isClosed();
 	
-	/**
-	 * Set if the mapped page has been changed or not
-	 * 
-	 * @param dirty
-	 */
 	void setDirty(boolean dirty);
 	
-	/**
-	 * The back page file name of the mapped page
-	 * 
-	 * @return
-	 */
 	String getPageFile();
 	
 	/**

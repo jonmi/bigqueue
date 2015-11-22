@@ -92,11 +92,7 @@ public interface IBigArray extends Closeable {
 	 * @return array full or not
 	 */
 	boolean isFull();
-	
-	/**
-	 * Remove all data in this array, this will empty the array and delete all back page files.
-	 * 
-	 */
+
 	void removeAll() throws IOException;
 	
 	/**

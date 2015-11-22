@@ -1,13 +1,10 @@
 package com.leansoft.bigqueue.cache;
 
+import org.apache.log4j.Logger;
+
 import java.io.Closeable;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicLong;
@@ -15,14 +12,12 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
-import org.apache.log4j.Logger;
-
 /**
  * Simple and thread-safe LRU cache implementation, 
  * supporting time to live and reference counting for entry.
- * 
- * in current implementation, entry expiration and purge(mark&sweep) is triggered by put operation,
- * and resource closing after mark&sweep is done in async way.  
+ *
+ * in current implementation, entry expiration and purge(mark and sweep) is triggered by put operation,
+ * and resource closing after mark and sweep is done in async way.
  * 
  * @author bulldog
  *

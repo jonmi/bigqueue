@@ -1,5 +1,11 @@
 package com.leansoft.bigqueue;
 
+import com.leansoft.bigqueue.page.IMappedPage;
+import com.leansoft.bigqueue.page.IMappedPageFactory;
+import com.leansoft.bigqueue.page.MappedPageFactoryImpl;
+import com.leansoft.bigqueue.utils.Calculator;
+import com.leansoft.bigqueue.utils.FileUtil;
+
 import java.io.File;
 import java.io.IOException;
 import java.math.BigInteger;
@@ -10,12 +16,6 @@ import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
-import com.leansoft.bigqueue.page.IMappedPage;
-import com.leansoft.bigqueue.page.IMappedPageFactory;
-import com.leansoft.bigqueue.page.MappedPageFactoryImpl;
-import com.leansoft.bigqueue.utils.Calculator;
-import com.leansoft.bigqueue.utils.FileUtil;
-
 /**
  * A big array implementation supporting sequential append and random read.
  *  
@@ -23,7 +23,7 @@ import com.leansoft.bigqueue.utils.FileUtil;
  * 1. FAST : close to the speed of direct memory access, extremely fast in append only and sequential read modes,
  *           sequential append and read are close to O(1) memory access, random read is close to O(1) memory access if 
  *           data is in cache and is close to O(1) disk access if data is not in cache.
- * 2. MEMORY-EFFICIENT : automatic paging & swapping algorithm, only most-recently accessed data is kept in memory.
+ * 2. MEMORY-EFFICIENT : automatic paging and swapping algorithm, only most-recently accessed data is kept in memory.
  * 3. THREAD-SAFE : multiple threads can concurrently read/append the array without data corruption.
  * 4. PERSISTENT - all array data is persisted on disk, and is crash resistant.
  * 5. BIG(HUGE) - the total size of the array data is only limited by the available disk space.
