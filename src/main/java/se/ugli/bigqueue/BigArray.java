@@ -751,7 +751,6 @@ public class BigArray implements Closeable {
      *
      * @param index valid data index
      * @return the length of binary data if the index is valid
-     * @ if there is any IO error
      */
 
     public int getItemLength(final long index) {

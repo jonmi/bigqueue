@@ -267,7 +267,6 @@ public class FanOutQueue implements Closeable {
      *
      * @param timestamp a timestamp
      */
-
     public void removeBefore(final long timestamp) {
         try {
             this.innerArray.arrayWriteLock.lock();
@@ -292,9 +291,8 @@ public class FanOutQueue implements Closeable {
      *
      * Note, this is a best effort call, exact size limit can't be guaranteed
      *
-     * @param sizeLmit size limit
+     * @param sizeLimit size limit
      */
-
     public void limitBackFileSize(final long sizeLimit) {
         try {
             this.innerArray.arrayWriteLock.lock();
