@@ -10,11 +10,6 @@ import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
-import se.ugli.bigqueue.page.MappedPageFactory;
-import se.ugli.bigqueue.page.MappedPage;
-import se.ugli.bigqueue.utils.Calculator;
-import se.ugli.bigqueue.utils.FileUtil;
-
 /**
  * A big array implementation supporting sequential append and random read.
  *

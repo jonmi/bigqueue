@@ -1,4 +1,4 @@
-package se.ugli.bigqueue.page;
+package se.ugli.bigqueue;
 
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNotSame;
@@ -18,8 +18,8 @@ import org.junit.After;
 import org.junit.Ignore;
 import org.junit.Test;
 
-import se.ugli.bigqueue.TestUtil;
-import se.ugli.bigqueue.utils.FileUtil;
+import se.ugli.bigqueue.MappedPage;
+import se.ugli.bigqueue.MappedPageFactory;
 
 public class MappedPageFactoryTest {
 

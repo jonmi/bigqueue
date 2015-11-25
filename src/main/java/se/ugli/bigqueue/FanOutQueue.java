@@ -8,10 +8,6 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
-import se.ugli.bigqueue.page.MappedPageFactory;
-import se.ugli.bigqueue.page.MappedPage;
-import se.ugli.bigqueue.utils.FolderNameValidator;
-
 /**
  * A big, fast and persistent queue implementation supporting fan out semantics.
  *

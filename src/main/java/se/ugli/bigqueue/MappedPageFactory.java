@@ -1,4 +1,4 @@
-package se.ugli.bigqueue.page;
+package se.ugli.bigqueue;
 
 import static java.nio.channels.FileChannel.MapMode.READ_WRITE;
 
@@ -16,11 +16,6 @@ import java.util.TreeSet;
 
 import org.apache.log4j.Logger;
 
-import se.ugli.bigqueue.BigQueueException;
-import se.ugli.bigqueue.cache.LRUCache;
-import se.ugli.bigqueue.utils.CloseCommand;
-import se.ugli.bigqueue.utils.FileUtil;
-
 /**
  * Mapped mapped page resource manager,
  * responsible for the creation, cache, recycle of the mapped pages.
@@ -31,7 +26,7 @@ import se.ugli.bigqueue.utils.FileUtil;
  * @author bulldog
  *
  */
-public class MappedPageFactory {
+class MappedPageFactory {
 
     private final static Logger logger = Logger.getLogger(MappedPageFactory.class);
 

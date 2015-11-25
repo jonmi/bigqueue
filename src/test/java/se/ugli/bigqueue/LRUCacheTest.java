@@ -1,4 +1,4 @@
-package se.ugli.bigqueue.cache;
+package se.ugli.bigqueue;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -11,7 +11,7 @@ import java.util.Random;
 
 import org.junit.Test;
 
-import se.ugli.bigqueue.TestUtil;
+import se.ugli.bigqueue.LRUCache;
 
 public class LRUCacheTest {
 

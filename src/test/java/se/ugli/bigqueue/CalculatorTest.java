@@ -1,10 +1,10 @@
-package se.ugli.bigqueue.utils;
+package se.ugli.bigqueue;
 
 import static org.junit.Assert.assertTrue;
 
 import org.junit.Test;
 
-import se.ugli.bigqueue.utils.Calculator;
+import se.ugli.bigqueue.Calculator;
 
 public class CalculatorTest {
 

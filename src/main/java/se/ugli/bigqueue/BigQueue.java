@@ -10,9 +10,6 @@ import java.util.concurrent.locks.ReentrantLock;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.SettableFuture;
 
-import se.ugli.bigqueue.page.MappedPageFactory;
-import se.ugli.bigqueue.page.MappedPage;
-
 /**
  * A big, fast and persistent queue implementation.
  *

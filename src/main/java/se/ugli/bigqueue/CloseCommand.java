@@ -1,13 +1,11 @@
-package se.ugli.bigqueue.utils;
+package se.ugli.bigqueue;
 
 import java.io.Closeable;
 import java.io.IOException;
 
 import org.apache.log4j.Logger;
 
-import se.ugli.bigqueue.page.MappedPageFactory;
-
-public class CloseCommand {
+class CloseCommand {
 
     private final static Logger logger = Logger.getLogger(MappedPageFactory.class);
 

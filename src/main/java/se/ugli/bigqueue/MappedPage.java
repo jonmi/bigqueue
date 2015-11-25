@@ -1,4 +1,4 @@
-package se.ugli.bigqueue.page;
+package se.ugli.bigqueue;
 
 import java.io.Closeable;
 import java.lang.reflect.Method;
@@ -7,7 +7,7 @@ import java.nio.MappedByteBuffer;
 
 import org.apache.log4j.Logger;
 
-public class MappedPage implements Closeable {
+class MappedPage implements Closeable {
 
     private final static Logger logger = Logger.getLogger(MappedPage.class);
 

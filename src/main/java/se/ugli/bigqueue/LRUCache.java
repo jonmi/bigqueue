@@ -1,4 +1,4 @@
-package se.ugli.bigqueue.cache;
+package se.ugli.bigqueue;
 
 import java.io.Closeable;
 import java.util.ArrayList;
@@ -16,8 +16,6 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import org.apache.log4j.Logger;
 
-import se.ugli.bigqueue.utils.CloseCommand;
-
 /**
  * Simple and thread-safe LRU cache implementation,
  * supporting time to live and reference counting for entry.
@@ -30,7 +28,7 @@ import se.ugli.bigqueue.utils.CloseCommand;
  * @param <K> key
  * @param <V> value
  */
-public class LRUCache<K, V extends Closeable> {
+class LRUCache<K, V extends Closeable> {
 
     private final static Logger logger = Logger.getLogger(LRUCache.class);
 
