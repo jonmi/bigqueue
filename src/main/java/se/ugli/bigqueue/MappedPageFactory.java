@@ -14,7 +14,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Mapped mapped page resource manager,
@@ -28,7 +29,7 @@ import org.apache.log4j.Logger;
  */
 class MappedPageFactory {
 
-    private final static Logger logger = Logger.getLogger(MappedPageFactory.class);
+    private final static Logger logger = LoggerFactory.getLogger(MappedPageFactory.class);
 
     private final int pageSize;
     private String pageDir;

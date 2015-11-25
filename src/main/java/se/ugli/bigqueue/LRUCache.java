@@ -14,7 +14,8 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Simple and thread-safe LRU cache implementation,
@@ -30,7 +31,7 @@ import org.apache.log4j.Logger;
  */
 class LRUCache<K, V extends Closeable> {
 
-    private final static Logger logger = Logger.getLogger(LRUCache.class);
+    private final static Logger logger = LoggerFactory.getLogger(LRUCache.class);
 
     public static final long DEFAULT_TTL = 10 * 1000; // milliseconds
 

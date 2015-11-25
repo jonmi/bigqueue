@@ -5,11 +5,12 @@ import java.lang.reflect.Method;
 import java.nio.ByteBuffer;
 import java.nio.MappedByteBuffer;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 class MappedPage implements Closeable {
 
-    private final static Logger logger = Logger.getLogger(MappedPage.class);
+    private final static Logger logger = LoggerFactory.getLogger(MappedPage.class);
 
     private ThreadLocalByteBuffer threadLocalBuffer;
     private volatile boolean dirty = false;

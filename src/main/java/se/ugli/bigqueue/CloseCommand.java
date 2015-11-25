@@ -3,11 +3,12 @@ package se.ugli.bigqueue;
 import java.io.Closeable;
 import java.io.IOException;
 
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 class CloseCommand {
 
-    private final static Logger logger = Logger.getLogger(MappedPageFactory.class);
+    private final static Logger logger = LoggerFactory.getLogger(MappedPageFactory.class);
 
     public static void close(final Closeable closeable) {
         try {
