@@ -13,7 +13,7 @@ import com.leansoft.bigqueue.IBigArray;
 
 /**
  * A tutorial to show the basic API usage of the big array.
- * 
+ *
  * @author bulldog
  *
  */
@@ -34,8 +34,8 @@ public class BigArrayTutorial {
 
             // append some items into the array
             for (int i = 0; i < 10; i++) {
-                String item = String.valueOf(i);
-                long index = bigArray.append(item.getBytes());
+                final String item = String.valueOf(i);
+                final long index = bigArray.append(item.getBytes());
                 assertTrue(i == index);
             }
             assertTrue(bigArray.size() == 10);
@@ -43,13 +43,13 @@ public class BigArrayTutorial {
             assertTrue(bigArray.getTailIndex() == 0);
 
             // randomly read items in the array
-            String item0 = new String(bigArray.get(0));
+            final String item0 = new String(bigArray.get(0));
             assertEquals(String.valueOf(0), item0);
 
-            String item3 = new String(bigArray.get(3));
+            final String item3 = new String(bigArray.get(3));
             assertEquals(String.valueOf(3), item3);
 
-            String item9 = new String(bigArray.get(9));
+            final String item9 = new String(bigArray.get(9));
             assertEquals(String.valueOf(9), item9);
 
             // empty the big array

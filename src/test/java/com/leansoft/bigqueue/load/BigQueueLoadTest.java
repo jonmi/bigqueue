@@ -4,7 +4,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
-import java.io.IOException;
 import java.util.Collections;
 import java.util.Queue;
 import java.util.Set;
@@ -44,7 +43,7 @@ public class BigQueueLoadTest {
     }
 
     @After
-    public void clean() throws IOException {
+    public void clean() {
         if (bigQueue != null) {
             bigQueue.removeAll();
         }

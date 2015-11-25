@@ -28,7 +28,7 @@ import com.google.common.util.concurrent.ListenableFuture;
 
 public class BigQueueUnitTest {
 
-    private String testDir = TestUtil.TEST_BASE_DIR + "bigqueue/unit";
+    private final String testDir = TestUtil.TEST_BASE_DIR + "bigqueue/unit";
     private IBigQueue bigQueue;
 
     @Test
@@ -71,12 +71,12 @@ public class BigQueueUnitTest {
         bigQueue = new BigQueueImpl(testDir, "big_loop_test");
         assertNotNull(bigQueue);
 
-        int loop = 1000000;
+        final int loop = 1000000;
         for (int i = 0; i < loop; i++) {
             bigQueue.enqueue(("" + i).getBytes());
             assertTrue(bigQueue.size() == i + 1L);
             assertTrue(!bigQueue.isEmpty());
-            byte[] data = bigQueue.peek();
+            final byte[] data = bigQueue.peek();
             assertEquals("0", new String(data));
         }
 
@@ -92,7 +92,7 @@ public class BigQueueUnitTest {
         assertTrue(!bigQueue.isEmpty());
 
         for (int i = 0; i < loop; i++) {
-            byte[] data = bigQueue.dequeue();
+            final byte[] data = bigQueue.dequeue();
             assertEquals("" + i, new String(data));
             assertTrue(bigQueue.size() == loop - i - 1);
         }
@@ -105,35 +105,33 @@ public class BigQueueUnitTest {
     }
 
     @Test
-    public void loopTimingTest() throws IOException {
+    public void loopTimingTest() {
         bigQueue = new BigQueueImpl(testDir, "loop_timing_test");
         assertNotNull(bigQueue);
 
-        int loop = 1000000;
+        final int loop = 1000000;
         long begin = System.currentTimeMillis();
-        for (int i = 0; i < loop; i++) {
+        for (int i = 0; i < loop; i++)
             bigQueue.enqueue(("" + i).getBytes());
-        }
         long end = System.currentTimeMillis();
         int timeInSeconds = (int) ((end - begin) / 1000L);
         System.out.println("Time used to enqueue " + loop + " items : " + timeInSeconds + " seconds.");
 
         begin = System.currentTimeMillis();
-        for (int i = 0; i < loop; i++) {
+        for (int i = 0; i < loop; i++)
             assertEquals("" + i, new String(bigQueue.dequeue()));
-        }
         end = System.currentTimeMillis();
         timeInSeconds = (int) ((end - begin) / 1000L);
         System.out.println("Time used to dequeue " + loop + " items : " + timeInSeconds + " seconds.");
     }
 
     @Test
-    public void testInvalidDataPageSize() throws IOException {
+    public void testInvalidDataPageSize() {
         try {
             bigQueue = new BigQueueImpl(testDir, "testInvalidDataPageSize", BigArrayImpl.MINIMUM_DATA_PAGE_SIZE - 1);
             fail("should throw invalid page size exception");
         }
-        catch (IllegalArgumentException iae) {
+        catch (final IllegalArgumentException iae) {
             // ecpected
         }
         // ok
@@ -147,7 +145,7 @@ public class BigQueueUnitTest {
         bigQueue.enqueue("2".getBytes());
         bigQueue.enqueue("3".getBytes());
 
-        DefaultItemIterator dii = new DefaultItemIterator();
+        final DefaultItemIterator dii = new DefaultItemIterator();
         bigQueue.applyForEach(dii);
         System.out.println("[" + dii.getCount() + "] " + dii.toString());
 
@@ -167,7 +165,7 @@ public class BigQueueUnitTest {
 
         final long N = 100000;
 
-        Thread publisher = new Thread(new Runnable() {
+        final Thread publisher = new Thread(new Runnable() {
             private Long item = 1l;
 
             @Override
@@ -178,13 +176,13 @@ public class BigQueueUnitTest {
                         item++;
                         Thread.yield();
                     }
-                    catch (Exception e) {
+                    catch (final Exception e) {
                         e.printStackTrace();
                     }
             }
         });
 
-        Thread subscriber = new Thread(new Runnable() {
+        final Thread subscriber = new Thread(new Runnable() {
             private long item = 0l;
 
             @Override
@@ -192,16 +190,16 @@ public class BigQueueUnitTest {
                 for (long i = 0; i < N; i++)
                     try {
                         if (bigQueue.size() > 0) {
-                            byte[] bytes = bigQueue.dequeue();
-                            String str = new String(bytes);
-                            long curr = Long.parseLong(str);
+                            final byte[] bytes = bigQueue.dequeue();
+                            final String str = new String(bytes);
+                            final long curr = Long.parseLong(str);
                             assertEquals(item + 1, curr);
                             item = curr;
                         }
 
                         Thread.yield();
                     }
-                    catch (Exception e) {
+                    catch (final Exception e) {
                         e.printStackTrace();
                     }
             }
@@ -211,7 +209,7 @@ public class BigQueueUnitTest {
         publisher.start();
 
         for (long i = 0; i < N; i += N / 100) {
-            DefaultItemIterator dii = new DefaultItemIterator();
+            final DefaultItemIterator dii = new DefaultItemIterator();
             bigQueue.applyForEach(dii);
             System.out.println("[" + dii.getCount() + "] " + dii.toString());
             Thread.sleep(2);
@@ -224,9 +222,9 @@ public class BigQueueUnitTest {
     @Test
     public void testIfFutureIsCompletedAtEnqueueAndListenersAreCalled() throws Exception {
         bigQueue = new BigQueueImpl(testDir, "testIfFutureIsCompletedAtEnqueueAndListenersAreCalled", BigArrayImpl.MINIMUM_DATA_PAGE_SIZE);
-        Executor executor1 = mock(Executor.class);
-        Executor executor2 = mock(Executor.class);
-        ListenableFuture<byte[]> future = bigQueue.dequeueAsync();
+        final Executor executor1 = mock(Executor.class);
+        final Executor executor2 = mock(Executor.class);
+        final ListenableFuture<byte[]> future = bigQueue.dequeueAsync();
         future.addListener(mock(Runnable.class), executor1);
         future.addListener(mock(Runnable.class), executor2);
 
@@ -240,16 +238,16 @@ public class BigQueueUnitTest {
         verify(executor1, times(1)).execute(any(Runnable.class));
         verify(executor2, times(1)).execute(any(Runnable.class));
 
-        ListenableFuture<byte[]> future2 = bigQueue.dequeueAsync();
+        final ListenableFuture<byte[]> future2 = bigQueue.dequeueAsync();
 
         future2.addListener(mock(Runnable.class), executor1);
         assertTrue(future2.isDone());
 
         try {
-            byte[] entry = future2.get(5, TimeUnit.SECONDS);
+            final byte[] entry = future2.get(5, TimeUnit.SECONDS);
             assertEquals("test2", new String(entry));
         }
-        catch (Exception e) {
+        catch (final Exception e) {
             fail("Future isn't already completed though there are further entries.");
         }
 
@@ -258,10 +256,10 @@ public class BigQueueUnitTest {
     @Test
     public void testIfFutureIsCompletedIfListenerIsRegisteredLater() throws Exception {
         bigQueue = new BigQueueImpl(testDir, "testIfFutureIsCompletedIfListenerIsRegisteredLater", BigArrayImpl.MINIMUM_DATA_PAGE_SIZE);
-        Executor executor = mock(Executor.class);
+        final Executor executor = mock(Executor.class);
         bigQueue.enqueue("test".getBytes());
 
-        ListenableFuture<byte[]> future = bigQueue.dequeueAsync();
+        final ListenableFuture<byte[]> future = bigQueue.dequeueAsync();
         assertNotNull(future);
         future.addListener(mock(Runnable.class), executor);
         verify(executor).execute(any(Runnable.class));
@@ -271,7 +269,7 @@ public class BigQueueUnitTest {
     @Test
     public void testIfFutureIsRecreatedAfterDequeue() throws Exception {
         bigQueue = new BigQueueImpl(testDir, "testIfFutureIsRecreatedAfterDequeue", BigArrayImpl.MINIMUM_DATA_PAGE_SIZE);
-        Executor executor = mock(Executor.class);
+        final Executor executor = mock(Executor.class);
         bigQueue.enqueue("test".getBytes());
         ListenableFuture<byte[]> future = bigQueue.dequeueAsync();
         assertTrue(future.isDone());
@@ -290,8 +288,8 @@ public class BigQueueUnitTest {
     @Test
     public void testIfFutureIsCanceledAfterClosing() throws Exception {
         bigQueue = new BigQueueImpl(testDir, "testIfFutureIsCanceledAfterClosing", BigArrayImpl.MINIMUM_DATA_PAGE_SIZE);
-        Executor executor = mock(Executor.class);
-        ListenableFuture<byte[]> future = bigQueue.dequeueAsync();
+        final Executor executor = mock(Executor.class);
+        final ListenableFuture<byte[]> future = bigQueue.dequeueAsync();
         future.addListener(mock(Runnable.class), executor);
         bigQueue.close();
         assertTrue(future.isCancelled());
@@ -304,8 +302,8 @@ public class BigQueueUnitTest {
         bigQueue.close();
 
         bigQueue = new BigQueueImpl(testDir, "testIfFutureWorksAfterQueueRecreation", BigArrayImpl.MINIMUM_DATA_PAGE_SIZE);
-        Executor executor = mock(Executor.class);
-        ListenableFuture<byte[]> future = bigQueue.dequeueAsync();
+        final Executor executor = mock(Executor.class);
+        final ListenableFuture<byte[]> future = bigQueue.dequeueAsync();
         future.addListener(mock(Runnable.class), executor);
         assertTrue(future.isDone());
         verify(executor).execute(any(Runnable.class));
@@ -317,8 +315,8 @@ public class BigQueueUnitTest {
         bigQueue = new BigQueueImpl(testDir, "testIfFutureIsInvalidatedIfAllItemsWhereRemoved", BigArrayImpl.MINIMUM_DATA_PAGE_SIZE);
         bigQueue.enqueue("test".getBytes());
 
-        Executor executor1 = mock(Executor.class);
-        Executor executor2 = mock(Executor.class);
+        final Executor executor1 = mock(Executor.class);
+        final Executor executor2 = mock(Executor.class);
 
         ListenableFuture<byte[]> future = bigQueue.dequeueAsync();
         future.addListener(mock(Runnable.class), executor1);
@@ -340,8 +338,8 @@ public class BigQueueUnitTest {
     public void testParallelAsyncDequeueAndPeekOperations() throws Exception {
         bigQueue = new BigQueueImpl(testDir, "testParallelAsyncDequeueAndPeekOperations", BigArrayImpl.MINIMUM_DATA_PAGE_SIZE);
 
-        ListenableFuture<byte[]> dequeueFuture = bigQueue.dequeueAsync();
-        ListenableFuture<byte[]> peekFuture = bigQueue.peekAsync();
+        final ListenableFuture<byte[]> dequeueFuture = bigQueue.dequeueAsync();
+        final ListenableFuture<byte[]> peekFuture = bigQueue.peekAsync();
 
         bigQueue.enqueue("Test1".getBytes());
 
@@ -357,12 +355,12 @@ public class BigQueueUnitTest {
     @Test
     public void testMultiplePeekAsyncOperations() throws Exception {
         bigQueue = new BigQueueImpl(testDir, "testMultiplePeekAsyncOperations", BigArrayImpl.MINIMUM_DATA_PAGE_SIZE);
-        ListenableFuture<byte[]> peekFuture1 = bigQueue.peekAsync();
+        final ListenableFuture<byte[]> peekFuture1 = bigQueue.peekAsync();
 
         bigQueue.enqueue("Test1".getBytes());
 
-        ListenableFuture<byte[]> peekFuture2 = bigQueue.peekAsync();
-        ListenableFuture<byte[]> peekFuture3 = bigQueue.peekAsync();
+        final ListenableFuture<byte[]> peekFuture2 = bigQueue.peekAsync();
+        final ListenableFuture<byte[]> peekFuture3 = bigQueue.peekAsync();
 
         assertTrue(peekFuture1.isDone());
         assertTrue(peekFuture2.isDone());
@@ -387,7 +385,7 @@ public class BigQueueUnitTest {
 
         final ListenableFuture<byte[]> future1 = spyBigQueue.dequeueAsync();
 
-        Runnable r = new Runnable() {
+        final Runnable r = new Runnable() {
             int dequeueCount = 0;
             ListenableFuture<byte[]> future;
 
@@ -395,16 +393,15 @@ public class BigQueueUnitTest {
             public void run() {
                 byte[] item = null;
                 try {
-                    item = (future == null) ? future1.get() : future.get();
+                    item = future == null ? future1.get() : future.get();
                     assertEquals(String.valueOf(dequeueCount), new String(item));
                     dequeueCount++;
                     future = spyBigQueue.dequeueAsync();
                     future.addListener(this, executor);
-                    if (dequeueCount == numberOfItems) {
+                    if (dequeueCount == numberOfItems)
                         testFlowControl.release();
-                    }
                 }
-                catch (Exception e) {
+                catch (final Exception e) {
                     fail("Unexpected exception during dequeue operation");
                 }
             }
@@ -415,49 +412,41 @@ public class BigQueueUnitTest {
         new Thread(new Runnable() {
             @Override
             public void run() {
-                for (int i = 0; i < numberOfItems; i++) {
+                for (int i = 0; i < numberOfItems; i++)
                     try {
                         spyBigQueue.enqueue(String.valueOf(i).getBytes());
                     }
-                    catch (Exception e) {
+                    catch (final Exception e) {
                         fail("Unexpected exception during enqueue operation");
                     }
-                }
                 testFlowControl.release();
             }
         }).start();
 
-        if (testFlowControl.tryAcquire(2, 10, TimeUnit.SECONDS)) {
+        if (testFlowControl.tryAcquire(2, 10, TimeUnit.SECONDS))
             verify(spyBigQueue, times(numberOfItems)).dequeue();
-        }
-        else {
+        else
             fail("Something is wrong with the testFlowControl semaphore or timing");
-        }
     }
 
     @After
-    public void clean() throws IOException {
-        if (bigQueue != null) {
+    public void clean() {
+        if (bigQueue != null)
             bigQueue.removeAll();
-        }
     }
 
     private class DefaultItemIterator implements IBigQueue.ItemIterator {
         private long count = 0;
-        private StringBuilder sb = new StringBuilder();
+        private final StringBuilder sb = new StringBuilder();
 
-        public void forEach(byte[] item) throws IOException {
-            try {
-                if (count < 20) {
-                    sb.append(new String(item));
-                    sb.append(", ");
+        @Override
+        public void forEach(final byte[] item) {
+            if (count < 20) {
+                sb.append(new String(item));
+                sb.append(", ");
 
-                }
-                count++;
             }
-            catch (Exception e) {
-                throw new IOException(e);
-            }
+            count++;
         }
 
         public long getCount() {

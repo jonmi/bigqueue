@@ -19,11 +19,11 @@ import org.junit.rules.TemporaryFolder;
 
 public class BigArrayUnitTest {
 
-    private String testDir = TestUtil.TEST_BASE_DIR + "bigarray/unit";
+    private final String testDir = TestUtil.TEST_BASE_DIR + "bigarray/unit";
     private IBigArray bigArray;
 
     @Test
-    public void simpleTest() throws IOException {
+    public void simpleTest() {
         bigArray = new BigArrayImpl(testDir, "simple_test");
         assertNotNull(bigArray);
 
@@ -37,19 +37,19 @@ public class BigArrayUnitTest {
                 bigArray.get(0);
                 fail("IndexOutOfBoundsException should be thrown here");
             }
-            catch (IndexOutOfBoundsException ex) {
+            catch (final IndexOutOfBoundsException ex) {
             }
             try {
                 bigArray.get(1);
                 fail("IndexOutOfBoundsException should be thrown here");
             }
-            catch (IndexOutOfBoundsException ex) {
+            catch (final IndexOutOfBoundsException ex) {
             }
             try {
                 bigArray.get(Long.MAX_VALUE);
                 fail("IndexOutOfBoundsException should be thrown here");
             }
-            catch (IndexOutOfBoundsException ex) {
+            catch (final IndexOutOfBoundsException ex) {
             }
 
             bigArray.append("hello".getBytes());
@@ -76,16 +76,15 @@ public class BigArrayUnitTest {
     }
 
     @Test
-    public void removeBeforeIndexTest() throws IOException {
+    public void removeBeforeIndexTest() {
         bigArray = new BigArrayImpl(testDir, "remove_before_index_test");
         assertNotNull(bigArray);
 
-        int loop = 5000000;
-        for (int i = 0; i < loop; i++) {
+        final int loop = 5000000;
+        for (int i = 0; i < loop; i++)
             bigArray.append(("" + i).getBytes());
-        }
 
-        int half = loop / 2;
+        final int half = loop / 2;
         bigArray.removeBeforeIndex(half);
         assertTrue(half == bigArray.getTailIndex());
         assertTrue(half == bigArray.size());
@@ -95,10 +94,10 @@ public class BigArrayUnitTest {
             bigArray.get(half - 1);
             fail("IndexOutOfBoundsException should be thrown here");
         }
-        catch (IndexOutOfBoundsException ex) {
+        catch (final IndexOutOfBoundsException ex) {
         }
 
-        long last = loop - 1;
+        final long last = loop - 1;
         bigArray.removeBeforeIndex(last);
         assertTrue(last == bigArray.getTailIndex());
         assertTrue(1 == bigArray.size());
@@ -107,24 +106,23 @@ public class BigArrayUnitTest {
             bigArray.get(last - 1);
             fail("IndexOutOfBoundsException should be thrown here");
         }
-        catch (IndexOutOfBoundsException ex) {
+        catch (final IndexOutOfBoundsException ex) {
         }
     }
 
     @Test
-    public void removeBeforeTest() throws IOException {
+    public void removeBeforeTest() {
         bigArray = new BigArrayImpl(testDir, "remove_before_test");
         assertNotNull(bigArray);
 
-        int loop = 5000000;
-        for (int i = 0; i < loop; i++) {
+        final int loop = 5000000;
+        for (int i = 0; i < loop; i++)
             bigArray.append(("" + i).getBytes());
-        }
 
-        int half = loop / 2;
-        long halfTimestamp = bigArray.getTimestamp(half);
+        final int half = loop / 2;
+        final long halfTimestamp = bigArray.getTimestamp(half);
         this.bigArray.removeBefore(halfTimestamp);
-        long tail = this.bigArray.getTailIndex();
+        final long tail = this.bigArray.getTailIndex();
         assertTrue(tail > 0);
 
     }
@@ -134,7 +132,7 @@ public class BigArrayUnitTest {
         bigArray = new BigArrayImpl(testDir, "big_loop_test");
         assertNotNull(bigArray);
 
-        int loop = 1000000;
+        final int loop = 1000000;
         long lastAppendTime = System.currentTimeMillis();
         for (int i = 0; i < loop; i++) {
             bigArray.append(("" + i).getBytes());
@@ -143,8 +141,8 @@ public class BigArrayUnitTest {
             assertTrue(bigArray.size() == i + 1L);
             assertTrue(!bigArray.isEmpty());
             assertTrue(!bigArray.isFull());
-            long currentTime = System.currentTimeMillis();
-            long justAppendTime = bigArray.getTimestamp(i);
+            final long currentTime = System.currentTimeMillis();
+            final long justAppendTime = bigArray.getTimestamp(i);
             assertTrue(justAppendTime <= currentTime);
             assertTrue(justAppendTime >= lastAppendTime);
             lastAppendTime = justAppendTime;
@@ -154,7 +152,7 @@ public class BigArrayUnitTest {
             bigArray.get(loop);
             fail("IndexOutOfBoundsException should be thrown here");
         }
-        catch (IndexOutOfBoundsException ex) {
+        catch (final IndexOutOfBoundsException ex) {
         }
 
         assertTrue(bigArray.getTailIndex() == 0L);
@@ -175,8 +173,8 @@ public class BigArrayUnitTest {
         lastAppendTime = System.currentTimeMillis();
         for (long i = 0; i < 10; i++) {
             bigArray.append(("" + i).getBytes());
-            long currentTime = System.currentTimeMillis();
-            long justAppendTime = bigArray.getTimestamp(loop + i);
+            final long currentTime = System.currentTimeMillis();
+            final long justAppendTime = bigArray.getTimestamp(loop + i);
             assertTrue(justAppendTime <= currentTime);
             assertTrue(justAppendTime >= lastAppendTime);
             lastAppendTime = justAppendTime;
@@ -190,80 +188,75 @@ public class BigArrayUnitTest {
     }
 
     @Test
-    public void loopTimingTest() throws IOException {
+    public void loopTimingTest() {
         bigArray = new BigArrayImpl(testDir, "loop_timing_test");
         assertNotNull(bigArray);
 
-        int loop = 1000000;
+        final int loop = 1000000;
         long begin = System.currentTimeMillis();
-        for (int i = 0; i < loop; i++) {
+        for (int i = 0; i < loop; i++)
             bigArray.append(("" + i).getBytes());
-        }
         long end = System.currentTimeMillis();
         int timeInSeconds = (int) ((end - begin) / 1000L);
         System.out.println("Time used to sequentially append " + loop + " items : " + timeInSeconds + " seconds.");
 
         begin = System.currentTimeMillis();
-        for (int i = 0; i < loop; i++) {
+        for (int i = 0; i < loop; i++)
             assertEquals("" + i, new String(bigArray.get(i)));
-        }
         end = System.currentTimeMillis();
         timeInSeconds = (int) ((end - begin) / 1000L);
         System.out.println("Time used to sequentially read " + loop + " items : " + timeInSeconds + " seconds.");
 
         begin = System.currentTimeMillis();
-        List<Integer> list = new ArrayList<Integer>();
-        for (int i = 0; i < loop; i++) {
+        final List<Integer> list = new ArrayList<Integer>();
+        for (int i = 0; i < loop; i++)
             list.add(i);
-        }
         Collections.shuffle(list);
         end = System.currentTimeMillis();
         timeInSeconds = (int) ((end - begin) / 1000L);
         System.out.println("Time used to shuffle " + loop + " items : " + timeInSeconds + " seconds.");
 
         begin = System.currentTimeMillis();
-        for (int i : list) {
+        for (final int i : list)
             assertEquals("" + i, new String(bigArray.get(i)));
-        }
         end = System.currentTimeMillis();
         timeInSeconds = (int) ((end - begin) / 1000L);
         System.out.println("Time used to randomly read " + loop + " items : " + timeInSeconds + " seconds.");
     }
 
     @Test
-    public void getClosestIndexTest() throws IOException {
+    public void getClosestIndexTest() {
         bigArray = new BigArrayImpl(testDir, "get_closest_index_test");
         assertNotNull(bigArray);
 
         assertTrue(IBigArray.NOT_FOUND == bigArray.findClosestIndex(System.currentTimeMillis()));
 
-        int loop = 2000000;
-        long begin = System.currentTimeMillis();
+        final int loop = 2000000;
+        final long begin = System.currentTimeMillis();
         TestUtil.sleepQuietly(500);
-        for (int i = 0; i < loop; i++) {
+        for (int i = 0; i < loop; i++)
             bigArray.append(("" + i).getBytes());
-        }
         TestUtil.sleepQuietly(500);
-        long end = System.currentTimeMillis();
+        final long end = System.currentTimeMillis();
 
-        long midTs = (end + begin) / 2;
+        final long midTs = (end + begin) / 2;
 
         assertTrue(0L == bigArray.findClosestIndex(begin));
         assertTrue(loop - 1 == bigArray.findClosestIndex(end));
 
-        long midIndex = bigArray.findClosestIndex(midTs);
+        final long midIndex = bigArray.findClosestIndex(midTs);
         assertTrue(0L < midIndex);
         assertTrue(loop - 1 > midIndex);
 
-        long closestTime = bigArray.getTimestamp(midIndex);
-        long closestTimeBefore = bigArray.getTimestamp(midIndex - 1);
-        long closestTimeAfter = bigArray.getTimestamp(midIndex + 1);
+        final long closestTime = bigArray.getTimestamp(midIndex);
+        final long closestTimeBefore = bigArray.getTimestamp(midIndex - 1);
+        final long closestTimeAfter = bigArray.getTimestamp(midIndex + 1);
         assertTrue(closestTimeBefore <= closestTime);
         assertTrue(closestTimeAfter >= closestTime);
     }
 
     @Test
-    public void getBackFileSizeTest() throws IOException {
+    public void getBackFileSizeTest() {
         bigArray = new BigArrayImpl(testDir, "get_back_file_size_test");
         assertNotNull(bigArray);
 
@@ -272,11 +265,10 @@ public class BigArrayUnitTest {
         bigArray.append("hello".getBytes());
         assertTrue(bigArray.getBackFileSize() == BigArrayImpl.INDEX_PAGE_SIZE + bigArray.getDataPageSize());
 
-        long loop = 3000000;
-        String randomString = TestUtil.randomString(256);
-        for (long i = 0; i < loop; i++) {
+        final long loop = 3000000;
+        final String randomString = TestUtil.randomString(256);
+        for (long i = 0; i < loop; i++)
             bigArray.append(randomString.getBytes());
-        }
 
         long realSize = bigArray.getBackFileSize();
         long expectedSize = BigArrayImpl.INDEX_PAGE_SIZE * 3 + bigArray.getDataPageSize() * 6;
@@ -296,7 +288,7 @@ public class BigArrayUnitTest {
     }
 
     @Test
-    public void limitBackFileSize() throws IOException {
+    public void limitBackFileSize() {
         bigArray = new BigArrayImpl(testDir, "limit_back_file_size_test");
         assertNotNull(bigArray);
 
@@ -308,11 +300,10 @@ public class BigArrayUnitTest {
         bigArray.limitBackFileSize(bigArray.getDataPageSize()); // no effect
         assertTrue(bigArray.getBackFileSize() == BigArrayImpl.INDEX_PAGE_SIZE + bigArray.getDataPageSize());
 
-        long loop = 3000000;
-        String randomString = TestUtil.randomString(256);
-        for (long i = 0; i < loop; i++) {
+        final long loop = 3000000;
+        final String randomString = TestUtil.randomString(256);
+        for (long i = 0; i < loop; i++)
             bigArray.append(randomString.getBytes());
-        }
 
         bigArray.limitBackFileSize(BigArrayImpl.INDEX_PAGE_SIZE * 2 + bigArray.getDataPageSize() * 3);
         assertTrue(bigArray.getBackFileSize() <= BigArrayImpl.INDEX_PAGE_SIZE * 2 + bigArray.getDataPageSize() * 3);
@@ -341,46 +332,43 @@ public class BigArrayUnitTest {
     }
 
     @Test
-    public void getItemLength() throws IOException {
+    public void getItemLength() {
         bigArray = new BigArrayImpl(testDir, "get_data_length_test");
         assertNotNull(bigArray);
 
-        for (int i = 1; i <= 100; i++) {
+        for (int i = 1; i <= 100; i++)
             bigArray.append(TestUtil.randomString(i).getBytes());
-        }
 
         for (int i = 1; i <= 100; i++) {
-            int length = bigArray.getItemLength(i - 1);
+            final int length = bigArray.getItemLength(i - 1);
             assertTrue(length == i);
         }
     }
 
     @Test
-    public void testInvalidDataPageSize() throws IOException {
+    public void testInvalidDataPageSize() {
         try {
             bigArray = new BigArrayImpl(testDir, "invalid_data_page_size", BigArrayImpl.MINIMUM_DATA_PAGE_SIZE - 1);
             fail("should throw invalid page size exception");
         }
-        catch (IllegalArgumentException iae) {
+        catch (final IllegalArgumentException iae) {
             // ecpected
         }
     }
 
     @Test
-    public void testMinimumDataPageSize() throws IOException {
+    public void testMinimumDataPageSize() {
         bigArray = new BigArrayImpl(testDir, "min_data_page_size", BigArrayImpl.MINIMUM_DATA_PAGE_SIZE);
 
-        String randomString = TestUtil.randomString(BigArrayImpl.MINIMUM_DATA_PAGE_SIZE / (1024 * 1024));
+        final String randomString = TestUtil.randomString(BigArrayImpl.MINIMUM_DATA_PAGE_SIZE / (1024 * 1024));
 
-        for (int i = 0; i < 1024 * 1024; i++) {
+        for (int i = 0; i < 1024 * 1024; i++)
             bigArray.append(randomString.getBytes());
-        }
 
         assertTrue(64 * 1024 * 1024 == bigArray.getBackFileSize());
 
-        for (int i = 0; i < 1024 * 1024 * 10; i++) {
+        for (int i = 0; i < 1024 * 1024 * 10; i++)
             bigArray.append(randomString.getBytes());
-        }
 
         assertTrue(11 * 64 * 1024 * 1024 == bigArray.getBackFileSize());
 
@@ -397,18 +385,13 @@ public class BigArrayUnitTest {
     public TemporaryFolder tempDir = new TemporaryFolder();
 
     @Test
-    public void testRemoveBeforeIndexDataCorruption() throws IOException, InterruptedException {
+    public void testRemoveBeforeIndexDataCorruption() throws InterruptedException, IOException {
         bigArray = new BigArrayImpl(tempDir.newFolder().getAbsolutePath(), "data_corruption", BigArrayImpl.DEFAULT_DATA_PAGE_SIZE);
 
         Executors.newScheduledThreadPool(1).scheduleAtFixedRate(new Runnable() {
             @Override
             public void run() {
-                try {
-                    bigArray.limitBackFileSize(500 * 1024 * 1024);
-                }
-                catch (IOException e) {
-                    e.printStackTrace();
-                }
+                bigArray.limitBackFileSize(500 * 1024 * 1024);
             }
         }, 100, 100, TimeUnit.MILLISECONDS);
 
@@ -417,10 +400,9 @@ public class BigArrayUnitTest {
 
         System.out.println("msgCount: " + msgCount);
         for (int i = 0; i < msgCount; ++i) {
-            byte[] bytes = new byte[msgSize];
-            for (int j = 0; j < msgSize; ++j) {
+            final byte[] bytes = new byte[msgSize];
+            for (int j = 0; j < msgSize; ++j)
                 bytes[j] = 'a';
-            }
             bigArray.append(bytes);
         }
 
@@ -430,27 +412,24 @@ public class BigArrayUnitTest {
             try {
                 bytes = bigArray.get(i);
             }
-            catch (IndexOutOfBoundsException e) {
+            catch (final IndexOutOfBoundsException e) {
                 System.out.println(i + " is reset to " + bigArray.getTailIndex());
                 i = bigArray.getTailIndex();
                 continue; // reset
             }
-            for (int j = 0; j < msgSize; ++j) {
+            for (int j = 0; j < msgSize; ++j)
                 assertEquals(bytes[j], 'a');
-            }
             ++count;
-            if (i % 10000 == 0) {
+            if (i % 10000 == 0)
                 Thread.yield();
-            }
         }
 
         System.out.println(count);
     }
 
     @After
-    public void clean() throws IOException {
-        if (bigArray != null) {
+    public void clean() {
+        if (bigArray != null)
             bigArray.removeAll();
-        }
     }
 }

@@ -1,7 +1,6 @@
 package com.leansoft.bigqueue.page;
 
 import java.io.Closeable;
-import java.io.IOException;
 import java.lang.reflect.Method;
 import java.nio.ByteBuffer;
 import java.nio.MappedByteBuffer;
@@ -24,7 +23,7 @@ public class MappedPageImpl implements IMappedPage, Closeable {
         this.index = index;
     }
 
-    public void close() throws IOException {
+    public void close() {
         synchronized (this) {
             if (closed)
                 return;

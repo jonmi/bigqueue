@@ -17,9 +17,9 @@ public class BinarySearchHelper {
      * @param low the low index
      * @param high the high index
      * @return the target index if found, -1 otherwise.
-     * @throws IOException
+     * @
      */
-    public static long binarySearch(IBigArray bigArray, String key, long low, long high) throws IOException {
+    public static long binarySearch(IBigArray bigArray, String key, long low, long high)  {
     	if (low > high) {
     		return NOT_FOUND;
     	}

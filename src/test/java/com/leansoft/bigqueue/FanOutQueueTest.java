@@ -14,7 +14,7 @@ import org.junit.Test;
 
 public class FanOutQueueTest {
 
-    private String testDir = TestUtil.TEST_BASE_DIR + "foqueue/unit";
+    private final String testDir = TestUtil.TEST_BASE_DIR + "foqueue/unit";
     private IFanOutQueue foQueue;
 
     @Test
@@ -24,7 +24,7 @@ public class FanOutQueueTest {
             foQueue = new FanOutQueueImpl(testDir, "simple_test");
             assertNotNull(foQueue);
 
-            String fid = "simpleTest";
+            final String fid = "simpleTest";
             for (int j = 1; j <= 3; j++) {
                 assertTrue(foQueue.size(fid) == 0L);
                 assertTrue(foQueue.isEmpty(fid));
@@ -53,12 +53,12 @@ public class FanOutQueueTest {
     }
 
     @Test
-    public void clientManagedIndexTest() throws IOException {
+    public void clientManagedIndexTest() {
         foQueue = new FanOutQueueImpl(testDir, "client_managed_index");
         assertNotNull(foQueue);
         assertTrue(foQueue.isEmpty());
 
-        int loop = 100000;
+        final int loop = 100000;
         for (int i = 0; i < loop; i++) {
             foQueue.enqueue(("" + i).getBytes());
             assertTrue(foQueue.size() == i + 1L);
@@ -72,23 +72,21 @@ public class FanOutQueueTest {
         foQueue = new FanOutQueueImpl(testDir, "big_loop_test");
         assertNotNull(foQueue);
 
-        int loop = 100000;
-        String fid1 = "bigLoopTest1";
+        final int loop = 100000;
+        final String fid1 = "bigLoopTest1";
         long ts = -1;
         for (int i = 0; i < loop; i++) {
             foQueue.enqueue(("" + i).getBytes());
             assertTrue(foQueue.size(fid1) == i + 1L);
             assertTrue(!foQueue.isEmpty(fid1));
-            byte[] data = foQueue.peek(fid1);
+            final byte[] data = foQueue.peek(fid1);
             assertEquals("0", new String(data));
-            int length = foQueue.peekLength(fid1);
+            final int length = foQueue.peekLength(fid1);
             assertEquals(1, length);
-            if (ts == -1) {
+            if (ts == -1)
                 ts = foQueue.peekTimestamp(fid1);
-            }
-            else {
+            else
                 assertTrue(ts == foQueue.peekTimestamp(fid1));
-            }
         }
 
         assertTrue(foQueue.size(fid1) == loop);
@@ -103,7 +101,7 @@ public class FanOutQueueTest {
         assertTrue(!foQueue.isEmpty(fid1));
 
         for (int i = 0; i < loop; i++) {
-            byte[] data = foQueue.dequeue(fid1);
+            final byte[] data = foQueue.dequeue(fid1);
             assertEquals("" + i, new String(data));
             assertTrue(foQueue.size(fid1) == loop - i - 1);
         }
@@ -111,13 +109,13 @@ public class FanOutQueueTest {
         assertTrue(foQueue.isEmpty(fid1));
 
         // fan out test
-        String fid2 = "bigLoopTest2";
+        final String fid2 = "bigLoopTest2";
         assertTrue(foQueue.size(fid2) == loop);
         assertTrue(!foQueue.isEmpty(fid2));
         assertEquals("0", new String(foQueue.peek(fid2)));
 
         for (int i = 0; i < loop; i++) {
-            byte[] data = foQueue.dequeue(fid2);
+            final byte[] data = foQueue.dequeue(fid2);
             assertEquals("" + i, new String(data));
             assertTrue(foQueue.size(fid2) == loop - i - 1);
         }
@@ -128,45 +126,42 @@ public class FanOutQueueTest {
     }
 
     @Test
-    public void loopTimingTest() throws IOException {
+    public void loopTimingTest() {
         foQueue = new FanOutQueueImpl(testDir, "loop_timing_test");
         assertNotNull(foQueue);
 
-        String fid1 = "loopTimingTest1";
-        int loop = 1000000;
+        final String fid1 = "loopTimingTest1";
+        final int loop = 1000000;
         long begin = System.currentTimeMillis();
-        for (int i = 0; i < loop; i++) {
+        for (int i = 0; i < loop; i++)
             foQueue.enqueue(("" + i).getBytes());
-        }
         long end = System.currentTimeMillis();
         int timeInSeconds = (int) ((end - begin) / 1000L);
         System.out.println("Time used to enqueue " + loop + " items : " + timeInSeconds + " seconds.");
 
         begin = System.currentTimeMillis();
-        for (int i = 0; i < loop; i++) {
+        for (int i = 0; i < loop; i++)
             assertEquals("" + i, new String(foQueue.dequeue(fid1)));
-        }
         end = System.currentTimeMillis();
         timeInSeconds = (int) ((end - begin) / 1000L);
         System.out.println("Fanout test 1, Time used to dequeue " + loop + " items : " + timeInSeconds + " seconds.");
 
-        String fid2 = "loopTimingTest2";
+        final String fid2 = "loopTimingTest2";
         begin = System.currentTimeMillis();
-        for (int i = 0; i < loop; i++) {
+        for (int i = 0; i < loop; i++)
             assertEquals("" + i, new String(foQueue.dequeue(fid2)));
-        }
         end = System.currentTimeMillis();
         timeInSeconds = (int) ((end - begin) / 1000L);
         System.out.println("Fanout test 2, Time used to dequeue " + loop + " items : " + timeInSeconds + " seconds.");
     }
 
     @Test
-    public void invalidDataPageSizeTest() throws IOException {
+    public void invalidDataPageSizeTest() {
         try {
             foQueue = new FanOutQueueImpl(testDir, "testInvalidDataPageSize", BigArrayImpl.MINIMUM_DATA_PAGE_SIZE - 1);
             fail("should throw invalid page size exception");
         }
-        catch (IllegalArgumentException iae) {
+        catch (final IllegalArgumentException iae) {
             // ecpected
         }
         // ok
@@ -174,15 +169,14 @@ public class FanOutQueueTest {
     }
 
     @Test
-    public void resetQueueFrontIndexTest() throws IOException {
+    public void resetQueueFrontIndexTest() {
         foQueue = new FanOutQueueImpl(testDir, "reset_queue_front_index");
         assertNotNull(foQueue);
 
-        String fid = "resetQueueFrontIndex";
-        int loop = 100000;
-        for (int i = 0; i < loop; i++) {
+        final String fid = "resetQueueFrontIndex";
+        final int loop = 100000;
+        for (int i = 0; i < loop; i++)
             foQueue.enqueue(("" + i).getBytes());
-        }
 
         assertEquals("0", new String(foQueue.peek(fid)));
 
@@ -193,7 +187,7 @@ public class FanOutQueueTest {
         assertEquals("1234", new String(foQueue.peek(fid)));
 
         foQueue.resetQueueFrontIndex(fid, loop - 1);
-        assertEquals((loop - 1) + "", new String(foQueue.peek(fid)));
+        assertEquals(loop - 1 + "", new String(foQueue.peek(fid)));
 
         foQueue.resetQueueFrontIndex(fid, loop);
         assertNull(foQueue.peek(fid));
@@ -202,37 +196,34 @@ public class FanOutQueueTest {
             foQueue.resetQueueFrontIndex(fid, loop + 1);
             fail("should throw IndexOutOfBoundsException");
         }
-        catch (IndexOutOfBoundsException e) {
+        catch (final IndexOutOfBoundsException e) {
             // expeced
         }
     }
 
     @Test
     @Ignore
-    public void removeBeforeTest() throws IOException {
+    public void removeBeforeTest() {
         foQueue = new FanOutQueueImpl(testDir, "remove_before", BigArrayImpl.MINIMUM_DATA_PAGE_SIZE);
 
-        String randomString1 = TestUtil.randomString(32);
-        for (int i = 0; i < 1024 * 1024; i++) {
+        final String randomString1 = TestUtil.randomString(32);
+        for (int i = 0; i < 1024 * 1024; i++)
             foQueue.enqueue(randomString1.getBytes());
-        }
 
-        String fid = "removeBeforeTest";
+        final String fid = "removeBeforeTest";
         assertTrue(foQueue.size(fid) == 1024 * 1024);
 
         long timestamp = System.currentTimeMillis();
-        String randomString2 = TestUtil.randomString(32);
-        for (int i = 0; i < 1024 * 1024; i++) {
+        final String randomString2 = TestUtil.randomString(32);
+        for (int i = 0; i < 1024 * 1024; i++)
             foQueue.enqueue(randomString2.getBytes());
-        }
 
         foQueue.removeBefore(timestamp);
 
         timestamp = System.currentTimeMillis();
-        String randomString3 = TestUtil.randomString(32);
-        for (int i = 0; i < 1024 * 1024; i++) {
+        final String randomString3 = TestUtil.randomString(32);
+        for (int i = 0; i < 1024 * 1024; i++)
             foQueue.enqueue(randomString3.getBytes());
-        }
 
         foQueue.removeBefore(timestamp);
 
@@ -241,29 +232,26 @@ public class FanOutQueueTest {
     }
 
     @Test
-    public void findClosestIndexTest() throws IOException {
+    public void findClosestIndexTest() {
         foQueue = new FanOutQueueImpl(testDir, "find_cloest_index", BigArrayImpl.MINIMUM_DATA_PAGE_SIZE);
         assertNotNull(foQueue);
 
         assertTrue(IBigArray.NOT_FOUND == foQueue.findClosestIndex(System.currentTimeMillis()));
 
-        int loop = 100000;
-        long begin = System.currentTimeMillis();
+        final int loop = 100000;
+        final long begin = System.currentTimeMillis();
         TestUtil.sleepQuietly(500);
-        for (int i = 0; i < loop; i++) {
+        for (int i = 0; i < loop; i++)
             foQueue.enqueue(("" + i).getBytes());
-        }
-        long midTs1 = System.currentTimeMillis();
-        for (int i = 0; i < loop; i++) {
+        final long midTs1 = System.currentTimeMillis();
+        for (int i = 0; i < loop; i++)
             foQueue.enqueue(("" + i).getBytes());
-        }
-        long midTs2 = System.currentTimeMillis();
-        for (int i = 0; i < loop; i++) {
+        final long midTs2 = System.currentTimeMillis();
+        for (int i = 0; i < loop; i++)
             foQueue.enqueue(("" + i).getBytes());
-        }
 
         TestUtil.sleepQuietly(500);
-        long end = System.currentTimeMillis();
+        final long end = System.currentTimeMillis();
 
         assertTrue(0L == foQueue.findClosestIndex(begin));
         assertTrue(3 * loop - 1 == foQueue.findClosestIndex(end));
@@ -271,31 +259,31 @@ public class FanOutQueueTest {
         assertTrue(0L == foQueue.findClosestIndex(IFanOutQueue.EARLIEST));
         assertTrue(3 * loop == foQueue.findClosestIndex(IFanOutQueue.LATEST));
 
-        long midIndex1 = foQueue.findClosestIndex(midTs1);
+        final long midIndex1 = foQueue.findClosestIndex(midTs1);
         System.out.println("mid index = " + midIndex1);
-        long midIndex2 = foQueue.findClosestIndex(midTs2);
+        final long midIndex2 = foQueue.findClosestIndex(midTs2);
         System.out.println("mid index = " + midIndex2);
         assertTrue(0L < midIndex1);
         assertTrue(midIndex1 < midIndex2);
         assertTrue(3 * loop - 1 > midIndex2);
 
-        long closestTime = foQueue.getTimestamp(midIndex1);
-        long closestTimeBefore = foQueue.getTimestamp(midIndex1 - 1);
-        long closestTimeAfter = foQueue.getTimestamp(midIndex1 + 1);
+        final long closestTime = foQueue.getTimestamp(midIndex1);
+        final long closestTimeBefore = foQueue.getTimestamp(midIndex1 - 1);
+        final long closestTimeAfter = foQueue.getTimestamp(midIndex1 + 1);
         assertTrue(closestTimeBefore <= closestTime);
         assertTrue(closestTimeAfter >= closestTime);
     }
 
     @Test
     @Ignore
-    public void findCloestIndexTest2() throws IOException {
+    public void findCloestIndexTest2() {
         foQueue = new FanOutQueueImpl(testDir, "find_cloest_index2", BigArrayImpl.MINIMUM_DATA_PAGE_SIZE);
         assertNotNull(foQueue);
 
         assertTrue(IBigArray.NOT_FOUND == foQueue.findClosestIndex(System.currentTimeMillis()));
 
-        int loop = 100;
-        long[] tsArray = new long[loop];
+        final int loop = 100;
+        final long[] tsArray = new long[loop];
         for (int i = 0; i < loop; i++) {
             TestUtil.sleepQuietly(10);
             foQueue.enqueue(("" + i).getBytes());
@@ -303,30 +291,27 @@ public class FanOutQueueTest {
         }
 
         for (int i = 0; i < loop; i++) {
-            long index = foQueue.findClosestIndex(tsArray[i]);
+            final long index = foQueue.findClosestIndex(tsArray[i]);
             assertTrue(index == i);
         }
     }
 
     @Test
-    public void limitBackFileSizeTest() throws IOException {
+    public void limitBackFileSizeTest() {
         foQueue = new FanOutQueueImpl(testDir, "limit_back_file_size", BigArrayImpl.MINIMUM_DATA_PAGE_SIZE);
         assertNotNull(foQueue);
 
-        int oneM = 1024 * 1024;
+        final int oneM = 1024 * 1024;
 
-        String randomString1 = TestUtil.randomString(32);
-        for (int i = 0; i < oneM; i++) { // 5 data pages + 5 index page
+        final String randomString1 = TestUtil.randomString(32);
+        for (int i = 0; i < oneM; i++)
             foQueue.enqueue(randomString1.getBytes());
-        }
-        String randomString2 = TestUtil.randomString(32);
-        for (int i = 0; i < oneM; i++) { // 5 data pages + 5 index page
+        final String randomString2 = TestUtil.randomString(32);
+        for (int i = 0; i < oneM; i++)
             foQueue.enqueue(randomString2.getBytes());
-        }
-        String randomString3 = TestUtil.randomString(32);
-        for (int i = 0; i < oneM; i++) { // 5 data pages + 5 index page
+        final String randomString3 = TestUtil.randomString(32);
+        for (int i = 0; i < oneM; i++)
             foQueue.enqueue(randomString3.getBytes());
-        }
 
         assertEquals(3 * oneM, foQueue.size("test"));
         assertEquals(randomString1, new String(foQueue.dequeue("test")));
@@ -350,10 +335,9 @@ public class FanOutQueueTest {
     }
 
     @After
-    public void clean() throws IOException {
-        if (foQueue != null) {
+    public void clean() {
+        if (foQueue != null)
             foQueue.removeAll();
-        }
     }
 
 }

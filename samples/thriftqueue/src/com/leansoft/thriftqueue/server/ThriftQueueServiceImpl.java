@@ -28,7 +28,7 @@ public class ThriftQueueServiceImpl implements BigQueueService.Iface {
 	
 	private String queueDir;
 	
-	public ThriftQueueServiceImpl(String queueDir) throws IOException {
+	public ThriftQueueServiceImpl(String queueDir)  {
 		this.queueDir = queueDir;
 		this.queueMap = new HashMap<String, IBigQueue>();
 	}

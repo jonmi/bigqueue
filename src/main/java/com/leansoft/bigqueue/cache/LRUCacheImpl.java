@@ -1,7 +1,6 @@
 package com.leansoft.bigqueue.cache;
 
 import java.io.Closeable;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -17,13 +16,15 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import org.apache.log4j.Logger;
 
+import com.leansoft.bigqueue.utils.CloseCommand;
+
 /**
- * Simple and thread-safe LRU cache implementation, 
+ * Simple and thread-safe LRU cache implementation,
  * supporting time to live and reference counting for entry.
  *
  * in current implementation, entry expiration and purge(mark and sweep) is triggered by put operation,
  * and resource closing after mark and sweep is done in async way.
- * 
+ *
  * @author bulldog
  *
  * @param <K> key
@@ -50,17 +51,17 @@ public class LRUCacheImpl<K, V extends Closeable> implements ILRUCache<K, V> {
         ttlMap = new HashMap<K, TTLValue>();
     }
 
-    public void put(K key, V value, long ttlInMilliSeconds) {
+    @Override
+    public void put(final K key, final V value, final long ttlInMilliSeconds) {
         Collection<V> valuesToClose = null;
         try {
             writeLock.lock();
             // trigger mark&sweep
             valuesToClose = markAndSweep();
-            if (valuesToClose != null && valuesToClose.contains(value)) { // just be cautious
+            if (valuesToClose != null && valuesToClose.contains(value))
                 valuesToClose.remove(value);
-            }
             map.put(key, value);
-            TTLValue ttl = new TTLValue(System.currentTimeMillis(), ttlInMilliSeconds);
+            final TTLValue ttl = new TTLValue(System.currentTimeMillis(), ttlInMilliSeconds);
             ttl.refCount.incrementAndGet();
             ttlMap.put(key, ttl);
         }
@@ -69,7 +70,7 @@ public class LRUCacheImpl<K, V extends Closeable> implements ILRUCache<K, V> {
         }
         if (valuesToClose != null && valuesToClose.size() > 0) {
             if (logger.isDebugEnabled()) {
-                int size = valuesToClose.size();
+                final int size = valuesToClose.size();
                 logger.info("Mark&Sweep found " + size + (size > 1 ? " resources" : " resource") + " to close.");
             }
             // close resource asynchronously
@@ -77,31 +78,31 @@ public class LRUCacheImpl<K, V extends Closeable> implements ILRUCache<K, V> {
         }
     }
 
-    public void put(K key, V value) {
+    @Override
+    public void put(final K key, final V value) {
         this.put(key, value, DEFAULT_TTL);
     }
 
     /**
      * A lazy mark and sweep,
-     * 
+     *
      * a separate thread can also do this.
      */
     private Collection<V> markAndSweep() {
         Collection<V> valuesToClose = null;
         keysToRemove.clear();
-        Set<K> keys = ttlMap.keySet();
-        long currentTS = System.currentTimeMillis();
-        for (K key : keys) {
-            TTLValue ttl = ttlMap.get(key);
-            if (ttl.refCount.get() <= 0 && (currentTS - ttl.lastAccessedTimestamp.get()) > ttl.ttl) { // remove object with no reference and expired
+        final Set<K> keys = ttlMap.keySet();
+        final long currentTS = System.currentTimeMillis();
+        for (final K key : keys) {
+            final TTLValue ttl = ttlMap.get(key);
+            if (ttl.refCount.get() <= 0 && currentTS - ttl.lastAccessedTimestamp.get() > ttl.ttl)
                 keysToRemove.add(key);
-            }
         }
 
         if (keysToRemove.size() > 0) {
             valuesToClose = new HashSet<V>();
-            for (K key : keysToRemove) {
-                V v = map.remove(key);
+            for (final K key : keysToRemove) {
+                final V v = map.remove(key);
                 valuesToClose.add(v);
                 ttlMap.remove(key);
             }
@@ -110,10 +111,11 @@ public class LRUCacheImpl<K, V extends Closeable> implements ILRUCache<K, V> {
         return valuesToClose;
     }
 
-    public V get(K key) {
+    @Override
+    public V get(final K key) {
         try {
             readLock.lock();
-            TTLValue ttl = ttlMap.get(key);
+            final TTLValue ttl = ttlMap.get(key);
             if (ttl != null) {
                 // Since the resource is acquired by calling thread,
                 // let's update last accessed timestamp and increment reference counting
@@ -132,7 +134,7 @@ public class LRUCacheImpl<K, V extends Closeable> implements ILRUCache<K, V> {
         AtomicLong refCount = new AtomicLong(0);
         long ttl;
 
-        public TTLValue(long ts, long ttl) {
+        public TTLValue(final long ts, final long ttl) {
             this.lastAccessedTimestamp = new AtomicLong(ts);
             this.ttl = ttl;
         }
@@ -141,43 +143,37 @@ public class LRUCacheImpl<K, V extends Closeable> implements ILRUCache<K, V> {
     private static class ValueCloser<V extends Closeable> implements Runnable {
         Collection<V> valuesToClose;
 
-        public ValueCloser(Collection<V> valuesToClose) {
+        public ValueCloser(final Collection<V> valuesToClose) {
             this.valuesToClose = valuesToClose;
         }
 
+        @Override
         public void run() {
-            int size = valuesToClose.size();
-            for (V v : valuesToClose) {
-                try {
-                    if (v != null) {
-                        v.close();
-                    }
-                }
-                catch (IOException e) {
-                    // close quietly
-                }
-            }
-            if (logger.isDebugEnabled()) {
+            final int size = valuesToClose.size();
+            for (final V v : valuesToClose)
+                if (v != null)
+                    CloseCommand.close(v);
+            if (logger.isDebugEnabled())
                 logger.debug("ResourceCloser closed " + size + (size > 1 ? " resources." : " resource."));
-            }
         }
     }
 
-    public void release(K key) {
+    @Override
+    public void release(final K key) {
         try {
             readLock.lock();
-            TTLValue ttl = ttlMap.get(key);
-            if (ttl != null) {
+            final TTLValue ttl = ttlMap.get(key);
+            if (ttl != null)
                 // since the resource is released by calling thread
                 // let's decrement the reference counting
                 ttl.refCount.decrementAndGet();
-            }
         }
         finally {
             readLock.unlock();
         }
     }
 
+    @Override
     public int size() {
         try {
             readLock.lock();
@@ -189,19 +185,17 @@ public class LRUCacheImpl<K, V extends Closeable> implements ILRUCache<K, V> {
     }
 
     @Override
-    public void removeAll() throws IOException {
+    public void removeAll() {
         try {
             writeLock.lock();
 
-            Collection<V> valuesToClose = new HashSet<V>();
+            final Collection<V> valuesToClose = new HashSet<V>();
             valuesToClose.addAll(map.values());
 
-            if (valuesToClose != null && valuesToClose.size() > 0) {
+            if (valuesToClose != null && valuesToClose.size() > 0)
                 // close resource synchronously
-                for (V v : valuesToClose) {
-                    v.close();
-                }
-            }
+                for (final V v : valuesToClose)
+                    CloseCommand.close(v);
             map.clear();
             ttlMap.clear();
 
@@ -213,15 +207,14 @@ public class LRUCacheImpl<K, V extends Closeable> implements ILRUCache<K, V> {
     }
 
     @Override
-    public V remove(K key) throws IOException {
+    public V remove(final K key) {
         try {
             writeLock.lock();
             ttlMap.remove(key);
-            V value = map.remove(key);
-            if (value != null) {
+            final V value = map.remove(key);
+            if (value != null)
                 // close synchronously
-                value.close();
-            }
+                CloseCommand.close(value);
             return value;
         }
         finally {
@@ -234,10 +227,9 @@ public class LRUCacheImpl<K, V extends Closeable> implements ILRUCache<K, V> {
     public Collection<V> getValues() {
         try {
             readLock.lock();
-            Collection<V> col = new ArrayList<V>();
-            for (V v : map.values()) {
+            final Collection<V> col = new ArrayList<V>();
+            for (final V v : map.values())
                 col.add(v);
-            }
             return col;
         }
         finally {

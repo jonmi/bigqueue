@@ -5,10 +5,8 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 import java.io.Closeable;
-import java.io.IOException;
 import java.util.Random;
 
 import org.junit.Test;
@@ -20,9 +18,9 @@ public class LRUCacheTest {
     @Test
     public void singleThreadTest() {
 
-        ILRUCache<Integer, TestObject> cache = new LRUCacheImpl<Integer, TestObject>();
+        final ILRUCache<Integer, TestObject> cache = new LRUCacheImpl<Integer, TestObject>();
 
-        TestObject obj = new TestObject();
+        final TestObject obj = new TestObject();
         cache.put(1, obj, 500);
 
         TestObject obj1 = cache.get(1);
@@ -49,7 +47,7 @@ public class LRUCacheTest {
         cache.release(1); // release second get
         cache.release(1); // release third get
         TestUtil.sleepQuietly(1000); // let 1 expire
-        TestObject testObj = new TestObject();
+        final TestObject testObj = new TestObject();
         cache.put(4, testObj); // trigger mark and sweep
         obj1 = cache.get(1);
         assertNull(obj1);
@@ -59,34 +57,19 @@ public class LRUCacheTest {
 
         assertTrue(cache.size() == 3);
 
-        try {
-            TestObject testObj2 = cache.remove(2);
-            assertNotNull(testObj2);
-            assertTrue(testObj2.closed);
-        }
-        catch (IOException e1) {
-            fail("Got IOException when removing test object 2 from the cache.");
-        }
+        final TestObject testObj2 = cache.remove(2);
+        assertNotNull(testObj2);
+        assertTrue(testObj2.closed);
 
         assertTrue(cache.size() == 2);
 
-        try {
-            TestObject testObj3 = cache.remove(3);
-            assertNotNull(testObj3);
-            assertTrue(testObj3.closed);
-        }
-        catch (IOException e1) {
-            fail("Got IOException when removing test object 3 from the cache.");
-        }
+        final TestObject testObj3 = cache.remove(3);
+        assertNotNull(testObj3);
+        assertTrue(testObj3.closed);
 
         assertTrue(cache.size() == 1);
 
-        try {
-            cache.removeAll();
-        }
-        catch (IOException e) {
-            fail("Got IOException when closing the cache.");
-        }
+        cache.removeAll();
 
         TestUtil.sleepQuietly(1000); // let the cleaner do the job
         assertTrue(testObj.isClosed());
@@ -99,107 +82,93 @@ public class LRUCacheTest {
         ILRUCache<Integer, TestObject> cache = new LRUCacheImpl<Integer, TestObject>();
         int threadNum = 100;
 
-        Worker[] workers = new Worker[threadNum];
+        final Worker[] workers = new Worker[threadNum];
 
         // initialization
-        for (int i = 0; i < threadNum; i++) {
+        for (int i = 0; i < threadNum; i++)
             workers[i] = new Worker(i, cache);
-        }
 
         // run
-        for (int i = 0; i < threadNum; i++) {
+        for (int i = 0; i < threadNum; i++)
             workers[i].start();
-        }
 
         // wait to finish
-        for (int i = 0; i < threadNum; i++) {
+        for (int i = 0; i < threadNum; i++)
             try {
                 workers[i].join();
             }
-            catch (InterruptedException e) {
+            catch (final InterruptedException e) {
                 // ignore
             }
-        }
 
         assertTrue(cache.size() == 0);
 
         cache = new LRUCacheImpl<Integer, TestObject>();
         threadNum = 100;
 
-        RandomWorker[] randomWorkers = new RandomWorker[threadNum];
-        TestObject[] testObjs = new TestObject[threadNum];
+        final RandomWorker[] randomWorkers = new RandomWorker[threadNum];
+        final TestObject[] testObjs = new TestObject[threadNum];
 
         // initialization
         for (int i = 0; i < threadNum; i++) {
             testObjs[i] = new TestObject();
             cache.put(i, testObjs[i], 2000);
         }
-        for (int i = 0; i < threadNum; i++) {
+        for (int i = 0; i < threadNum; i++)
             randomWorkers[i] = new RandomWorker(threadNum, cache);
-        }
 
         // run
-        for (int i = 0; i < threadNum; i++) {
+        for (int i = 0; i < threadNum; i++)
             randomWorkers[i].start();
-        }
 
         // wait to finish
-        for (int i = 0; i < threadNum; i++) {
+        for (int i = 0; i < threadNum; i++)
             try {
                 randomWorkers[i].join();
             }
-            catch (InterruptedException e) {
+            catch (final InterruptedException e) {
                 // ignore
             }
-        }
 
         // verification
         for (int i = 0; i < threadNum; i++) {
-            TestObject testObj = cache.get(i);
+            final TestObject testObj = cache.get(i);
             assertNotNull(testObj);
             cache.release(i);
         }
-        for (int i = 0; i < threadNum; i++) {
+        for (int i = 0; i < threadNum; i++)
             assertFalse(testObjs[i].isClosed());
-        }
 
-        for (int i = 0; i < threadNum; i++) {
+        for (int i = 0; i < threadNum; i++)
             cache.release(i); // release put
-        }
 
         TestUtil.sleepQuietly(1000); // let the test objects expire but not expired
         cache.put(threadNum + 1, new TestObject()); // trigger mark and sweep
 
         for (int i = 0; i < threadNum; i++) {
-            TestObject testObj = cache.get(i);
+            final TestObject testObj = cache.get(i);
             assertNotNull(testObj); // hasn't expire yet
             cache.release(i);
         }
 
         TestUtil.sleepQuietly(2010); // let the test objects expire and be expired
-        TestObject tmpObj = new TestObject();
+        final TestObject tmpObj = new TestObject();
         cache.put(threadNum + 1, tmpObj); // trigger mark and sweep
 
         for (int i = 0; i < threadNum; i++) {
-            TestObject testObj = cache.get(i);
+            final TestObject testObj = cache.get(i);
             assertNull(testObj);
         }
 
         TestUtil.sleepQuietly(1000); // let the cleaner do the job
-        for (int i = 0; i < threadNum; i++) {
+        for (int i = 0; i < threadNum; i++)
             assertTrue(testObjs[i].isClosed());
-        }
 
         assertTrue(cache.size() == 1);
 
         assertFalse(tmpObj.isClosed());
 
-        try {
-            cache.removeAll();
-        }
-        catch (IOException e) {
-            fail("Got IOException when closing the cache");
-        }
+        cache.removeAll();
         TestUtil.sleepQuietly(1000);
         assertTrue(tmpObj.isClosed());
 
@@ -207,19 +176,20 @@ public class LRUCacheTest {
     }
 
     private static class Worker extends Thread {
-        private int id;
-        private ILRUCache<Integer, TestObject> cache;
+        private final int id;
+        private final ILRUCache<Integer, TestObject> cache;
 
-        public Worker(int id, ILRUCache<Integer, TestObject> cache) {
+        public Worker(final int id, final ILRUCache<Integer, TestObject> cache) {
             this.id = id;
             this.cache = cache;
         }
 
+        @Override
         public void run() {
-            TestObject testObj = new TestObject();
+            final TestObject testObj = new TestObject();
             cache.put(id, testObj, 500);
 
-            TestObject testObj2 = cache.get(id);
+            final TestObject testObj2 = cache.get(id);
             assertEquals(testObj, testObj2);
             assertEquals(testObj, testObj2);
             assertFalse(testObj2.isClosed());
@@ -230,7 +200,7 @@ public class LRUCacheTest {
             TestUtil.sleepQuietly(1000);
             cache.put(id + 1000, new TestObject(), 500); // trigger mark&sweep
 
-            TestObject testObj3 = cache.get(id);
+            final TestObject testObj3 = cache.get(id);
             assertNull(testObj3);
             TestUtil.sleepQuietly(1000); // let the cleaner do the job
             assertTrue(testObj.isClosed());
@@ -239,36 +209,32 @@ public class LRUCacheTest {
             TestUtil.sleepQuietly(1000);
             cache.put(id + 2000, new TestObject()); // trigger mark&sweep
 
-            try {
-                TestObject testObj_id2000 = cache.remove(id + 2000);
-                assertNotNull(testObj_id2000);
-                assertTrue(testObj_id2000.isClosed());
-            }
-            catch (IOException e) {
-                fail("Got IOException when removing test object id 2000 from the cache.");
-            }
+            final TestObject testObj_id2000 = cache.remove(id + 2000);
+            assertNotNull(testObj_id2000);
+            assertTrue(testObj_id2000.isClosed());
 
-            TestObject testObj4 = cache.get(id + 1000);
+            final TestObject testObj4 = cache.get(id + 1000);
             TestUtil.sleepQuietly(1000); // let the cleaner do the job
             assertNull(testObj4);
         }
     }
 
     private static class RandomWorker extends Thread {
-        private int idLimit;
-        private Random random = new Random();
-        private ILRUCache<Integer, TestObject> cache;
+        private final int idLimit;
+        private final Random random = new Random();
+        private final ILRUCache<Integer, TestObject> cache;
 
-        public RandomWorker(int idLimit, ILRUCache<Integer, TestObject> cache) {
+        public RandomWorker(final int idLimit, final ILRUCache<Integer, TestObject> cache) {
             this.idLimit = idLimit;
             this.cache = cache;
         }
 
+        @Override
         public void run() {
             for (int i = 0; i < 10; i++) {
-                int id = random.nextInt(idLimit);
+                final int id = random.nextInt(idLimit);
 
-                TestObject testObj = cache.get(id);
+                final TestObject testObj = cache.get(id);
                 assertNotNull(testObj);
                 cache.put(id + 1000, new TestObject(), 1000);
                 cache.put(id + 2000, new TestObject(), 1000);
@@ -276,15 +242,9 @@ public class LRUCacheTest {
                 cache.release(id + 1000);
                 cache.release(id + 3000);
                 cache.release(id);
-                try {
-                    TestObject testObj_id2000 = cache.remove(id + 2000);
-                    if (testObj_id2000 != null) { // maybe already removed by other threads
-                        assertTrue(testObj_id2000.isClosed());
-                    }
-                }
-                catch (IOException e) {
-                    fail("Got IOException when removing test object id 2000 from the cache.");
-                }
+                final TestObject testObj_id2000 = cache.remove(id + 2000);
+                if (testObj_id2000 != null)
+                    assertTrue(testObj_id2000.isClosed());
             }
         }
     }
@@ -293,7 +253,8 @@ public class LRUCacheTest {
 
         private volatile boolean closed = false;
 
-        public void close() throws IOException {
+        @Override
+        public void close() {
             closed = true;
         }
 

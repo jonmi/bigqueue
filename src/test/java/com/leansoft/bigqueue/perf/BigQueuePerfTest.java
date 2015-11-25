@@ -2,9 +2,7 @@ package com.leansoft.bigqueue.perf;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
-import java.io.IOException;
 import java.util.Queue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CountDownLatch;
@@ -25,12 +23,7 @@ public class BigQueuePerfTest {
     private static BlockingQueue<byte[]> memoryQueue = new LinkedBlockingQueue<byte[]>();
 
     static {
-        try {
-            bigQueue = new BigQueueImpl(testDir, "perf_test");
-        }
-        catch (IOException e) {
-            fail("fail to init big queue");
-        }
+        bigQueue = new BigQueueImpl(testDir, "perf_test");
     }
 
     // configurable parameters
@@ -57,10 +50,9 @@ public class BigQueuePerfTest {
     }
 
     @After
-    public void clean() throws IOException {
-        if (bigQueue != null) {
+    public void clean() {
+        if (bigQueue != null)
             bigQueue.removeAll();
-        }
     }
 
     private static final AtomicInteger producingItemCount = new AtomicInteger(0);
@@ -69,36 +61,35 @@ public class BigQueuePerfTest {
     private static class Producer extends Thread {
         private final CountDownLatch latch;
         private final Queue<Result> resultQueue;
-        private byte[] rndBytes = TestUtil.randomString(messageLength).getBytes();
+        private final byte[] rndBytes = TestUtil.randomString(messageLength).getBytes();
 
-        public Producer(CountDownLatch latch, Queue<Result> resultQueue) {
+        public Producer(final CountDownLatch latch, final Queue<Result> resultQueue) {
             this.latch = latch;
             this.resultQueue = resultQueue;
         }
 
+        @Override
         public void run() {
-            Result result = new Result();
+            final Result result = new Result();
             try {
                 latch.countDown();
                 latch.await();
 
-                long start = System.currentTimeMillis();
+                final long start = System.currentTimeMillis();
                 while (true) {
-                    int count = producingItemCount.incrementAndGet();
+                    final int count = producingItemCount.incrementAndGet();
                     if (count > totalItemCount)
                         break;
-                    if (testType == TestType.IN_MEMORY_QUEUE_TEST) {
+                    if (testType == TestType.IN_MEMORY_QUEUE_TEST)
                         memoryQueue.add(rndBytes);
-                    }
-                    else {
+                    else
                         bigQueue.enqueue(rndBytes);
-                    }
                 }
-                long end = System.currentTimeMillis();
+                final long end = System.currentTimeMillis();
                 result.status = Status.SUCCESS;
                 result.duration = end - start;
             }
-            catch (Exception e) {
+            catch (final Exception e) {
                 e.printStackTrace();
                 result.status = Status.ERROR;
             }
@@ -110,38 +101,37 @@ public class BigQueuePerfTest {
         private final CountDownLatch latch;
         private final Queue<Result> resultQueue;
 
-        public Consumer(CountDownLatch latch, Queue<Result> resultQueue) {
+        public Consumer(final CountDownLatch latch, final Queue<Result> resultQueue) {
             this.latch = latch;
             this.resultQueue = resultQueue;
         }
 
+        @Override
         public void run() {
-            Result result = new Result();
+            final Result result = new Result();
             try {
                 latch.countDown();
                 latch.await();
 
-                long start = System.currentTimeMillis();
+                final long start = System.currentTimeMillis();
                 while (true) {
                     byte[] item = null;
-                    int index = consumingItemCount.getAndIncrement();
+                    final int index = consumingItemCount.getAndIncrement();
                     if (index >= totalItemCount)
                         break;
-                    if (testType == TestType.IN_MEMORY_QUEUE_TEST) {
+                    if (testType == TestType.IN_MEMORY_QUEUE_TEST)
                         item = memoryQueue.take();
-                    }
                     else {
                         item = bigQueue.dequeue();
-                        while (item == null) {
+                        while (item == null)
                             item = bigQueue.dequeue();
-                        }
                     }
                 }
-                long end = System.currentTimeMillis();
+                final long end = System.currentTimeMillis();
                 result.status = Status.SUCCESS;
                 result.duration = end - start;
             }
-            catch (Exception e) {
+            catch (final Exception e) {
                 e.printStackTrace();
                 result.status = Status.ERROR;
             }
@@ -177,10 +167,10 @@ public class BigQueuePerfTest {
 
     public void doRunProduceThenConsume() throws Exception {
         //prepare
-        CountDownLatch platch = new CountDownLatch(producerNum);
-        CountDownLatch clatch = new CountDownLatch(consumerNum);
-        BlockingQueue<Result> producerResults = new LinkedBlockingQueue<Result>();
-        BlockingQueue<Result> consumerResults = new LinkedBlockingQueue<Result>();
+        final CountDownLatch platch = new CountDownLatch(producerNum);
+        final CountDownLatch clatch = new CountDownLatch(consumerNum);
+        final BlockingQueue<Result> producerResults = new LinkedBlockingQueue<Result>();
+        final BlockingQueue<Result> consumerResults = new LinkedBlockingQueue<Result>();
 
         long totalProducingTime = 0;
         long totalConsumingTime = 0;
@@ -188,20 +178,19 @@ public class BigQueuePerfTest {
         long start = System.currentTimeMillis();
         //run testing
         for (int i = 0; i < producerNum; i++) {
-            Producer p = new Producer(platch, producerResults);
+            final Producer p = new Producer(platch, producerResults);
             p.start();
         }
 
         for (int i = 0; i < producerNum; i++) {
-            Result result = producerResults.take();
+            final Result result = producerResults.take();
             assertEquals(result.status, Status.SUCCESS);
             totalProducingTime += result.duration;
         }
         long end = System.currentTimeMillis();
 
-        if (testType == TestType.BIG_QUEUE_TEST) {
+        if (testType == TestType.BIG_QUEUE_TEST)
             assertTrue(!bigQueue.isEmpty());
-        }
 
         System.out.println("-----------------------------------------------");
         System.out.println("Test type = " + testType);
@@ -218,12 +207,12 @@ public class BigQueuePerfTest {
 
         start = System.currentTimeMillis();
         for (int i = 0; i < consumerNum; i++) {
-            Consumer c = new Consumer(clatch, consumerResults);
+            final Consumer c = new Consumer(clatch, consumerResults);
             c.start();
         }
 
         for (int i = 0; i < consumerNum; i++) {
-            Result result = consumerResults.take();
+            final Result result = consumerResults.take();
             assertEquals(result.status, Status.SUCCESS);
             totalConsumingTime += result.duration;
         }
@@ -244,39 +233,39 @@ public class BigQueuePerfTest {
 
     public void doRunMixed() throws Exception {
         //prepare
-        CountDownLatch allLatch = new CountDownLatch(producerNum + consumerNum);
-        BlockingQueue<Result> producerResults = new LinkedBlockingQueue<Result>();
-        BlockingQueue<Result> consumerResults = new LinkedBlockingQueue<Result>();
+        final CountDownLatch allLatch = new CountDownLatch(producerNum + consumerNum);
+        final BlockingQueue<Result> producerResults = new LinkedBlockingQueue<Result>();
+        final BlockingQueue<Result> consumerResults = new LinkedBlockingQueue<Result>();
 
         long totalProducingTime = 0;
         long totalConsumingTime = 0;
 
-        long start = System.currentTimeMillis();
+        final long start = System.currentTimeMillis();
         //run testing
         for (int i = 0; i < producerNum; i++) {
-            Producer p = new Producer(allLatch, producerResults);
+            final Producer p = new Producer(allLatch, producerResults);
             p.start();
         }
 
         for (int i = 0; i < consumerNum; i++) {
-            Consumer c = new Consumer(allLatch, consumerResults);
+            final Consumer c = new Consumer(allLatch, consumerResults);
             c.start();
         }
 
         //verify and report
         for (int i = 0; i < producerNum; i++) {
-            Result result = producerResults.take();
+            final Result result = producerResults.take();
             assertEquals(result.status, Status.SUCCESS);
             totalProducingTime += result.duration;
         }
 
         for (int i = 0; i < consumerNum; i++) {
-            Result result = consumerResults.take();
+            final Result result = consumerResults.take();
             assertEquals(result.status, Status.SUCCESS);
             totalConsumingTime += result.duration;
         }
 
-        long end = System.currentTimeMillis();
+        final long end = System.currentTimeMillis();
 
         assertTrue(memoryQueue.isEmpty());
         assertTrue(bigQueue.isEmpty());
