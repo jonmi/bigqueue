@@ -4,7 +4,7 @@
 
     <groupId>se.ugli.bigqueue</groupId>
     <artifactId>bigqueue</artifactId>
-    <version>0.8.0</version>
+    <version>1.6.0.0</version>
 
     <name>bigqueue</name>
     <url>https://github.com/ugli/bigqueue</url>
@@ -14,7 +14,7 @@
         <connection>scm:git:git://github.com/ugli/bigqueue.git</connection>
         <developerConnection>scm:git:git@github.com:ugli/bigqueue.git</developerConnection>
         <url>https://github.com/ugli/bigqueue</url>
-        <tag>bigqueue-0.8.0</tag>
+        <tag>1.6.0.0</tag>
     </scm>
     <licenses>
         <license>
