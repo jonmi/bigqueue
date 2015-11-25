@@ -16,9 +16,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.junit.After;
 import org.junit.Test;
 
-import se.ugli.bigqueue.MappedPage;
-import se.ugli.bigqueue.MappedPageFactory;
-
 public class MappedPageTest {
 
     private MappedPageFactory mappedPageFactory;
@@ -101,8 +98,8 @@ public class MappedPageTest {
         private final Set<MappedPage> sharedPageSet;
         private final List<ByteBuffer> localBufferList;
 
-        public Worker(final int id, final MappedPageFactory pageFactory, final int pageNumLimit,
-                final Set<MappedPage> sharedPageSet, final List<ByteBuffer> localBufferList) {
+        public Worker(final int id, final MappedPageFactory pageFactory, final int pageNumLimit, final Set<MappedPage> sharedPageSet,
+                final List<ByteBuffer> localBufferList) {
             this.id = id;
             this.pageFactory = pageFactory;
             this.sharedPageSet = sharedPageSet;

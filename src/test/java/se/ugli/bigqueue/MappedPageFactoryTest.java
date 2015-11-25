@@ -18,9 +18,6 @@ import org.junit.After;
 import org.junit.Ignore;
 import org.junit.Test;
 
-import se.ugli.bigqueue.MappedPage;
-import se.ugli.bigqueue.MappedPageFactory;
-
 public class MappedPageFactoryTest {
 
     private MappedPageFactory mappedPageFactory;
