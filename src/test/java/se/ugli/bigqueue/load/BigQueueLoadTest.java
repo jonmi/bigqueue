@@ -16,14 +16,13 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.After;
 import org.junit.Test;
 
-import se.ugli.bigqueue.BigQueueImpl;
-import se.ugli.bigqueue.IBigQueue;
+import se.ugli.bigqueue.BigQueue;
 import se.ugli.bigqueue.TestUtil;
 
 public class BigQueueLoadTest {
 
     private static String testDir = TestUtil.TEST_BASE_DIR + "bigqueue/load";
-    private static IBigQueue bigQueue;
+    private static BigQueue bigQueue;
 
     // configurable parameters
     //////////////////////////////////////////////////////////////////
@@ -44,9 +43,8 @@ public class BigQueueLoadTest {
 
     @After
     public void clean() {
-        if (bigQueue != null) {
+        if (bigQueue != null)
             bigQueue.removeAll();
-        }
     }
 
     private static final AtomicInteger producingItemCount = new AtomicInteger(0);
@@ -57,29 +55,30 @@ public class BigQueueLoadTest {
         private final CountDownLatch latch;
         private final Queue<Result> resultQueue;
 
-        public Producer(CountDownLatch latch, Queue<Result> resultQueue) {
+        public Producer(final CountDownLatch latch, final Queue<Result> resultQueue) {
             this.latch = latch;
             this.resultQueue = resultQueue;
         }
 
+        @Override
         public void run() {
-            Result result = new Result();
-            String rndString = TestUtil.randomString(messageLength);
+            final Result result = new Result();
+            final String rndString = TestUtil.randomString(messageLength);
             try {
                 latch.countDown();
                 latch.await();
 
                 while (true) {
-                    int count = producingItemCount.incrementAndGet();
+                    final int count = producingItemCount.incrementAndGet();
                     if (count > totalItemCount)
                         break;
-                    String item = rndString + count;
+                    final String item = rndString + count;
                     itemSet.add(item);
                     bigQueue.enqueue(item.getBytes());
                 }
                 result.status = Status.SUCCESS;
             }
-            catch (Exception e) {
+            catch (final Exception e) {
                 e.printStackTrace();
                 result.status = Status.ERROR;
             }
@@ -91,20 +90,21 @@ public class BigQueueLoadTest {
         private final CountDownLatch latch;
         private final Queue<Result> resultQueue;
 
-        public Consumer(CountDownLatch latch, Queue<Result> resultQueue) {
+        public Consumer(final CountDownLatch latch, final Queue<Result> resultQueue) {
             this.latch = latch;
             this.resultQueue = resultQueue;
         }
 
+        @Override
         public void run() {
-            Result result = new Result();
+            final Result result = new Result();
             try {
                 latch.countDown();
                 latch.await();
 
                 while (true) {
                     String item = null;
-                    int index = consumingItemCount.getAndIncrement();
+                    final int index = consumingItemCount.getAndIncrement();
                     if (index >= totalItemCount)
                         break;
 
@@ -119,7 +119,7 @@ public class BigQueueLoadTest {
                 }
                 result.status = Status.SUCCESS;
             }
-            catch (Exception e) {
+            catch (final Exception e) {
                 e.printStackTrace();
                 result.status = Status.ERROR;
             }
@@ -130,7 +130,7 @@ public class BigQueueLoadTest {
 
     @Test
     public void runTest() throws Exception {
-        bigQueue = new BigQueueImpl(testDir, "load_test");
+        bigQueue = new BigQueue(testDir, "load_test");
 
         System.out.println("Load test begin ...");
         for (int i = 0; i < loop; i++) {
@@ -144,7 +144,7 @@ public class BigQueueLoadTest {
         }
 
         bigQueue.close();
-        bigQueue = new BigQueueImpl(testDir, "load_test");
+        bigQueue = new BigQueue(testDir, "load_test");
 
         for (int i = 0; i < loop; i++) {
             System.out.println("[doRunMixed] round " + (i + 1) + " of " + loop);
@@ -160,19 +160,19 @@ public class BigQueueLoadTest {
 
     public void doRunProduceThenConsume() throws Exception {
         //prepare
-        CountDownLatch platch = new CountDownLatch(producerNum);
-        CountDownLatch clatch = new CountDownLatch(consumerNum);
-        BlockingQueue<Result> producerResults = new LinkedBlockingQueue<Result>();
-        BlockingQueue<Result> consumerResults = new LinkedBlockingQueue<Result>();
+        final CountDownLatch platch = new CountDownLatch(producerNum);
+        final CountDownLatch clatch = new CountDownLatch(consumerNum);
+        final BlockingQueue<Result> producerResults = new LinkedBlockingQueue<Result>();
+        final BlockingQueue<Result> consumerResults = new LinkedBlockingQueue<Result>();
 
         //run testing
         for (int i = 0; i < producerNum; i++) {
-            Producer p = new Producer(platch, producerResults);
+            final Producer p = new Producer(platch, producerResults);
             p.start();
         }
 
         for (int i = 0; i < producerNum; i++) {
-            Result result = producerResults.take();
+            final Result result = producerResults.take();
             assertEquals(result.status, Status.SUCCESS);
         }
 
@@ -183,12 +183,12 @@ public class BigQueueLoadTest {
         assertTrue(itemSet.size() == totalItemCount);
 
         for (int i = 0; i < consumerNum; i++) {
-            Consumer c = new Consumer(clatch, consumerResults);
+            final Consumer c = new Consumer(clatch, consumerResults);
             c.start();
         }
 
         for (int i = 0; i < consumerNum; i++) {
-            Result result = consumerResults.take();
+            final Result result = consumerResults.take();
             assertEquals(result.status, Status.SUCCESS);
         }
 
@@ -199,29 +199,29 @@ public class BigQueueLoadTest {
 
     public void doRunMixed() throws Exception {
         //prepare
-        CountDownLatch allLatch = new CountDownLatch(producerNum + consumerNum);
-        BlockingQueue<Result> producerResults = new LinkedBlockingQueue<Result>();
-        BlockingQueue<Result> consumerResults = new LinkedBlockingQueue<Result>();
+        final CountDownLatch allLatch = new CountDownLatch(producerNum + consumerNum);
+        final BlockingQueue<Result> producerResults = new LinkedBlockingQueue<Result>();
+        final BlockingQueue<Result> consumerResults = new LinkedBlockingQueue<Result>();
 
         //run testing
         for (int i = 0; i < producerNum; i++) {
-            Producer p = new Producer(allLatch, producerResults);
+            final Producer p = new Producer(allLatch, producerResults);
             p.start();
         }
 
         for (int i = 0; i < consumerNum; i++) {
-            Consumer c = new Consumer(allLatch, consumerResults);
+            final Consumer c = new Consumer(allLatch, consumerResults);
             c.start();
         }
 
         //verify
         for (int i = 0; i < producerNum; i++) {
-            Result result = producerResults.take();
+            final Result result = producerResults.take();
             assertEquals(result.status, Status.SUCCESS);
         }
 
         for (int i = 0; i < consumerNum; i++) {
-            Result result = consumerResults.take();
+            final Result result = consumerResults.take();
             assertEquals(result.status, Status.SUCCESS);
         }
 

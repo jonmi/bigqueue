@@ -5,11 +5,11 @@ import java.io.IOException;
 
 import org.apache.log4j.Logger;
 
-import se.ugli.bigqueue.page.MappedPageFactoryImpl;
+import se.ugli.bigqueue.page.MappedPageFactory;
 
 public class CloseCommand {
 
-    private final static Logger logger = Logger.getLogger(MappedPageFactoryImpl.class);
+    private final static Logger logger = Logger.getLogger(MappedPageFactory.class);
 
     public static void close(final Closeable closeable) {
         try {

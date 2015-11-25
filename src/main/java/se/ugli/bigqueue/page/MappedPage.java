@@ -7,22 +7,23 @@ import java.nio.MappedByteBuffer;
 
 import org.apache.log4j.Logger;
 
-public class MappedPageImpl implements IMappedPage, Closeable {
+public class MappedPage implements Closeable {
 
-    private final static Logger logger = Logger.getLogger(MappedPageImpl.class);
+    private final static Logger logger = Logger.getLogger(MappedPage.class);
 
     private ThreadLocalByteBuffer threadLocalBuffer;
     private volatile boolean dirty = false;
     private volatile boolean closed = false;
-    private String pageFile;
-    private long index;
+    private final String pageFile;
+    private final long index;
 
-    public MappedPageImpl(MappedByteBuffer mbb, String pageFile, long index) {
+    public MappedPage(final MappedByteBuffer mbb, final String pageFile, final long index) {
         this.threadLocalBuffer = new ThreadLocalByteBuffer(mbb);
         this.pageFile = pageFile;
         this.index = index;
     }
 
+    @Override
     public void close() {
         synchronized (this) {
             if (closed)
@@ -30,54 +31,68 @@ public class MappedPageImpl implements IMappedPage, Closeable {
 
             flush();
 
-            MappedByteBuffer srcBuf = (MappedByteBuffer) threadLocalBuffer.getSourceBuffer();
+            final MappedByteBuffer srcBuf = (MappedByteBuffer) threadLocalBuffer.getSourceBuffer();
             unmap(srcBuf);
 
             this.threadLocalBuffer = null; // hint GC
 
             closed = true;
-            if (logger.isDebugEnabled()) {
+            if (logger.isDebugEnabled())
                 logger.debug("Mapped page for " + this.pageFile + " was just unmapped and closed.");
-            }
         }
     }
 
-    @Override
-    public void setDirty(boolean dirty) {
+    public void setDirty(final boolean dirty) {
         this.dirty = dirty;
     }
 
-    @Override
+    /**
+     * Persist any changes to disk
+     */
+
     public void flush() {
         synchronized (this) {
             if (closed)
                 return;
             if (dirty) {
-                MappedByteBuffer srcBuf = (MappedByteBuffer) threadLocalBuffer.getSourceBuffer();
+                final MappedByteBuffer srcBuf = (MappedByteBuffer) threadLocalBuffer.getSourceBuffer();
                 srcBuf.force(); // flush the changes
                 dirty = false;
-                if (logger.isDebugEnabled()) {
+                if (logger.isDebugEnabled())
                     logger.debug("Mapped page for " + this.pageFile + " was just flushed.");
-                }
             }
         }
     }
 
-    public byte[] getLocal(int position, int length) {
-        ByteBuffer buf = this.getLocal(position);
-        byte[] data = new byte[length];
+    /**
+     * Get data from a thread local copy of the mapped page buffer
+     *
+     * @param position start position(relative to the start position of source mapped page buffer) of the thread local buffer
+     * @param length the length to fetch
+     * @return byte data
+     */
+
+    public byte[] getLocal(final int position, final int length) {
+        final ByteBuffer buf = this.getLocal(position);
+        final byte[] data = new byte[length];
         buf.get(data);
         return data;
     }
 
-    @Override
-    public ByteBuffer getLocal(int position) {
-        ByteBuffer buf = this.threadLocalBuffer.get();
+    /**
+     * Get a thread local copy of the mapped page buffer
+     *
+     * @param position start position(relative to the start position of source mapped page buffer) of the thread local buffer
+     * @return a byte buffer with specific position as start position.
+     */
+
+    public ByteBuffer getLocal(final int position) {
+        final ByteBuffer buf = this.threadLocalBuffer.get();
         buf.position(position);
         return buf;
     }
 
-    private static void unmap(MappedByteBuffer buffer) {
+    private static void unmap(final MappedByteBuffer buffer) {
         Cleaner.clean(buffer);
     }
 
@@ -100,7 +115,7 @@ public class MappedPageImpl implements IMappedPage, Closeable {
                 directBufferCleanerCleanX.setAccessible(true);
                 v = true;
             }
-            catch (Exception e) {
+            catch (final Exception e) {
                 v = false;
             }
             CLEAN_SUPPORTED = v;
@@ -108,25 +123,24 @@ public class MappedPageImpl implements IMappedPage, Closeable {
             directBufferCleanerClean = directBufferCleanerCleanX;
         }
 
-        public static void clean(ByteBuffer buffer) {
+        public static void clean(final ByteBuffer buffer) {
             if (buffer == null)
                 return;
-            if (CLEAN_SUPPORTED && buffer.isDirect()) {
+            if (CLEAN_SUPPORTED && buffer.isDirect())
                 try {
-                    Object cleaner = directBufferCleaner.invoke(buffer);
+                    final Object cleaner = directBufferCleaner.invoke(buffer);
                     directBufferCleanerClean.invoke(cleaner);
                 }
-                catch (Exception e) {
+                catch (final Exception e) {
                     // silently ignore exception
                 }
-            }
         }
     }
 
     private static class ThreadLocalByteBuffer extends ThreadLocal<ByteBuffer> {
-        private ByteBuffer _src;
+        private final ByteBuffer _src;
 
-        public ThreadLocalByteBuffer(ByteBuffer src) {
+        public ThreadLocalByteBuffer(final ByteBuffer src) {
             _src = src;
         }
 
@@ -136,26 +150,30 @@ public class MappedPageImpl implements IMappedPage, Closeable {
 
         @Override
         protected synchronized ByteBuffer initialValue() {
-            ByteBuffer dup = _src.duplicate();
+            final ByteBuffer dup = _src.duplicate();
             return dup;
         }
     }
 
-    @Override
     public boolean isClosed() {
         return closed;
     }
 
+    @Override
     public String toString() {
         return "Mapped page for " + this.pageFile + ", index = " + this.index + ".";
     }
 
-    @Override
     public String getPageFile() {
         return this.pageFile;
     }
 
-    @Override
+    /**
+     * The index of the mapped page
+     *
+     * @return the index
+     */
+
     public long getPageIndex() {
         return this.index;
     }

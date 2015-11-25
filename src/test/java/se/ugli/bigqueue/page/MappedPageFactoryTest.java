@@ -19,20 +19,16 @@ import org.junit.Ignore;
 import org.junit.Test;
 
 import se.ugli.bigqueue.TestUtil;
-import se.ugli.bigqueue.page.IMappedPage;
-import se.ugli.bigqueue.page.IMappedPageFactory;
-import se.ugli.bigqueue.page.MappedPageFactoryImpl;
-import se.ugli.bigqueue.page.MappedPageImpl;
 import se.ugli.bigqueue.utils.FileUtil;
 
 public class MappedPageFactoryTest {
 
-    private IMappedPageFactory mappedPageFactory;
+    private MappedPageFactory mappedPageFactory;
     private final String testDir = TestUtil.TEST_BASE_DIR + "bigqueue/unit/mapped_page_factory_test";
 
     @Test
     public void testGetBackPageFileSet() {
-        mappedPageFactory = new MappedPageFactoryImpl(1024, testDir + "/test_get_backpage_fileset", 2 * 1000);
+        mappedPageFactory = new MappedPageFactory(1024, testDir + "/test_get_backpage_fileset", 2 * 1000);
 
         for (int i = 0; i < 10; i++)
             mappedPageFactory.acquirePage(i);
@@ -40,12 +36,12 @@ public class MappedPageFactoryTest {
         final Set<String> fileSet = mappedPageFactory.getBackPageFileSet();
         assertTrue(fileSet.size() == 10);
         for (int i = 0; i < 10; i++)
-            assertTrue(fileSet.contains(MappedPageFactoryImpl.PAGE_FILE_NAME + "-" + i + MappedPageFactoryImpl.PAGE_FILE_SUFFIX));
+            assertTrue(fileSet.contains(MappedPageFactory.PAGE_FILE_NAME + "-" + i + MappedPageFactory.PAGE_FILE_SUFFIX));
     }
 
     @Test
     public void testGetBackPageFileSize() {
-        mappedPageFactory = new MappedPageFactoryImpl(1024 * 1024, testDir + "/test_get_backpage_filesize", 2 * 1000);
+        mappedPageFactory = new MappedPageFactory(1024 * 1024, testDir + "/test_get_backpage_filesize", 2 * 1000);
 
         for (int i = 0; i < 100; i++)
             mappedPageFactory.acquirePage(i);
@@ -57,14 +53,14 @@ public class MappedPageFactoryTest {
     @Ignore
     public void testSingleThread() {
 
-        mappedPageFactory = new MappedPageFactoryImpl(1024 * 1024 * 128, testDir + "/test_single_thread", 2 * 1000);
+        mappedPageFactory = new MappedPageFactory(1024 * 1024 * 128, testDir + "/test_single_thread", 2 * 1000);
 
-        IMappedPage mappedPage = mappedPageFactory.acquirePage(0); // first acquire
+        MappedPage mappedPage = mappedPageFactory.acquirePage(0); // first acquire
         assertNotNull(mappedPage);
-        final IMappedPage mappedPage0 = mappedPageFactory.acquirePage(0); // second acquire
+        final MappedPage mappedPage0 = mappedPageFactory.acquirePage(0); // second acquire
         assertSame(mappedPage, mappedPage0);
 
-        final IMappedPage mappedPage1 = mappedPageFactory.acquirePage(1);
+        final MappedPage mappedPage1 = mappedPageFactory.acquirePage(1);
         assertNotSame(mappedPage0, mappedPage1);
 
         mappedPageFactory.releasePage(0); // release first acquire
@@ -126,15 +122,15 @@ public class MappedPageFactoryTest {
         mappedPageFactory.releaseCachedPages();
         assertTrue(mappedPageFactory.getCacheSize() == 0);
 
-        assertTrue(((MappedPageFactoryImpl) mappedPageFactory).getLockMapSize() == 0);
+        assertTrue(mappedPageFactory.getLockMapSize() == 0);
         mappedPageFactory.deleteAllPages();
 
         start = System.currentTimeMillis();
         for (int i = 0; i <= 100; i++) {
-            final IMappedPage mappedPageI = mappedPageFactory.acquirePage(i);
+            final MappedPage mappedPageI = mappedPageFactory.acquirePage(i);
             mappedPageI.getLocal(0).put(("hello " + i).getBytes());
             mappedPageI.setDirty(true);
-            ((MappedPageImpl) mappedPageI).flush();
+            mappedPageI.flush();
             final long currentTime = System.currentTimeMillis();
             final long iPageFileLastModifiedTime = mappedPageFactory.getPageFileLastModifiedTime(i);
             assertTrue(iPageFileLastModifiedTime >= start);
@@ -172,14 +168,14 @@ public class MappedPageFactoryTest {
 
     @Test
     public void testMultiThreads() {
-        mappedPageFactory = new MappedPageFactoryImpl(1024 * 1024 * 128, testDir + "/test_multi_threads", 2 * 1000);
+        mappedPageFactory = new MappedPageFactory(1024 * 1024 * 128, testDir + "/test_multi_threads", 2 * 1000);
 
         final int pageNumLimit = 200;
         final int threadNum = 1000;
 
-        final Map<Integer, IMappedPage[]> sharedMap1 = this.testAndGetSharedMap(mappedPageFactory, threadNum, pageNumLimit);
+        final Map<Integer, MappedPage[]> sharedMap1 = this.testAndGetSharedMap(mappedPageFactory, threadNum, pageNumLimit);
         assertTrue(this.mappedPageFactory.getCacheSize() == pageNumLimit);
-        final Map<Integer, IMappedPage[]> sharedMap2 = this.testAndGetSharedMap(mappedPageFactory, threadNum, pageNumLimit);
+        final Map<Integer, MappedPage[]> sharedMap2 = this.testAndGetSharedMap(mappedPageFactory, threadNum, pageNumLimit);
         assertTrue(this.mappedPageFactory.getCacheSize() == pageNumLimit);
         // pages in two maps should be same since they are all cached
         verifyMap(sharedMap1, sharedMap2, threadNum, pageNumLimit, true);
@@ -188,7 +184,7 @@ public class MappedPageFactoryTest {
         TestUtil.sleepQuietly(2500);
         this.mappedPageFactory.acquirePage(pageNumLimit + 1); // trigger mark&sweep
         assertTrue(this.mappedPageFactory.getCacheSize() == 1);
-        final Map<Integer, IMappedPage[]> sharedMap3 = this.testAndGetSharedMap(mappedPageFactory, threadNum, pageNumLimit);
+        final Map<Integer, MappedPage[]> sharedMap3 = this.testAndGetSharedMap(mappedPageFactory, threadNum, pageNumLimit);
         assertTrue(this.mappedPageFactory.getCacheSize() == pageNumLimit + 1);
         // pages in two maps should be different since all pages in sharedMap1 has expired and purged out
         verifyMap(sharedMap1, sharedMap3, threadNum, pageNumLimit, false);
@@ -197,12 +193,12 @@ public class MappedPageFactoryTest {
         verifyClosed(sharedMap1, threadNum, pageNumLimit, true);
 
         // ensure no memory leak
-        assertTrue(((MappedPageFactoryImpl) mappedPageFactory).getLockMapSize() == 0);
+        assertTrue(mappedPageFactory.getLockMapSize() == 0);
     }
 
-    private void verifyClosed(final Map<Integer, IMappedPage[]> map, final int threadNum, final int pageNumLimit, final boolean closed) {
+    private void verifyClosed(final Map<Integer, MappedPage[]> map, final int threadNum, final int pageNumLimit, final boolean closed) {
         for (int i = 0; i < threadNum; i++) {
-            final IMappedPage[] pageArray = map.get(i);
+            final MappedPage[] pageArray = map.get(i);
             for (int j = 0; j < pageNumLimit; j++)
                 if (closed)
                     assertTrue(pageArray[j].isClosed());
@@ -211,11 +207,11 @@ public class MappedPageFactoryTest {
         }
     }
 
-    private void verifyMap(final Map<Integer, IMappedPage[]> map1, final Map<Integer, IMappedPage[]> map2, final int threadNum,
+    private void verifyMap(final Map<Integer, MappedPage[]> map1, final Map<Integer, MappedPage[]> map2, final int threadNum,
             final int pageNumLimit, final boolean same) {
         for (int i = 0; i < threadNum; i++) {
-            final IMappedPage[] pageArray1 = map1.get(i);
-            final IMappedPage[] pageArray2 = map2.get(i);
+            final MappedPage[] pageArray1 = map1.get(i);
+            final MappedPage[] pageArray2 = map2.get(i);
             for (int j = 0; j < pageNumLimit; j++)
                 if (same)
                     assertSame(pageArray1[j], pageArray2[j]);
@@ -224,13 +220,13 @@ public class MappedPageFactoryTest {
         }
     }
 
-    private Map<Integer, IMappedPage[]> testAndGetSharedMap(final IMappedPageFactory pageFactory, final int threadNum,
+    private Map<Integer, MappedPage[]> testAndGetSharedMap(final MappedPageFactory pageFactory, final int threadNum,
             final int pageNumLimit) {
 
         // init shared map
-        final Map<Integer, IMappedPage[]> sharedMap = new ConcurrentHashMap<Integer, IMappedPage[]>();
+        final Map<Integer, MappedPage[]> sharedMap = new ConcurrentHashMap<Integer, MappedPage[]>();
         for (int i = 0; i < threadNum; i++) {
-            final IMappedPage[] pageArray = new IMappedPage[pageNumLimit];
+            final MappedPage[] pageArray = new MappedPage[pageNumLimit];
             sharedMap.put(i, pageArray);
         }
 
@@ -252,13 +248,13 @@ public class MappedPageFactoryTest {
             }
 
         // validate
-        final IMappedPage[] firstPageArray = sharedMap.get(0);
+        final MappedPage[] firstPageArray = sharedMap.get(0);
         for (int j = 0; j < pageNumLimit; j++) {
-            final IMappedPage page = firstPageArray[j];
+            final MappedPage page = firstPageArray[j];
             assertTrue(!page.isClosed());
         }
         for (int i = 1; i < threadNum; i++) {
-            final IMappedPage[] pageArray = sharedMap.get(i);
+            final MappedPage[] pageArray = sharedMap.get(i);
             for (int j = 0; j < pageNumLimit; j++)
                 assertSame(firstPageArray[j], pageArray[j]);
         }
@@ -267,13 +263,13 @@ public class MappedPageFactoryTest {
     }
 
     private static class Worker extends Thread {
-        private final Map<Integer, IMappedPage[]> map;
-        private final IMappedPageFactory pageFactory;
+        private final Map<Integer, MappedPage[]> map;
+        private final MappedPageFactory pageFactory;
         private final int id;
         private final int pageNumLimit;
         private final CountDownLatch latch;
 
-        public Worker(final int id, final Map<Integer, IMappedPage[]> sharedMap, final IMappedPageFactory mappedPageFactory,
+        public Worker(final int id, final Map<Integer, MappedPage[]> sharedMap, final MappedPageFactory mappedPageFactory,
                 final int pageNumLimit, final CountDownLatch latch) {
             this.map = sharedMap;
             this.pageFactory = mappedPageFactory;
@@ -288,7 +284,7 @@ public class MappedPageFactoryTest {
             for (int i = 0; i < pageNumLimit; i++)
                 pageNumList.add(i);
             Collections.shuffle(pageNumList);
-            final IMappedPage[] pages = map.get(id);
+            final MappedPage[] pages = map.get(id);
             latch.countDown();
             try {
                 latch.await();

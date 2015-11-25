@@ -16,14 +16,13 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.After;
 import org.junit.Test;
 
-import se.ugli.bigqueue.FanOutQueueImpl;
-import se.ugli.bigqueue.IFanOutQueue;
+import se.ugli.bigqueue.FanOutQueue;
 import se.ugli.bigqueue.TestUtil;
 
 public class FanOutQueueLoadTest {
 
     private static String testDir = TestUtil.TEST_BASE_DIR + "fanout_queue/load";
-    private static IFanOutQueue foQueue;
+    private static FanOutQueue foQueue;
 
     // configurable parameters
     //////////////////////////////////////////////////////////////////
@@ -45,9 +44,8 @@ public class FanOutQueueLoadTest {
 
     @After
     public void clean() {
-        if (foQueue != null) {
+        if (foQueue != null)
             foQueue.removeAll();
-        }
     }
 
     private static class Producer extends Thread {
@@ -57,8 +55,8 @@ public class FanOutQueueLoadTest {
         private final Set<String> itemSetA;
         private final Set<String> itemSetB;
 
-        public Producer(CountDownLatch latch, Queue<Result> resultQueue, AtomicInteger producingItemCount, Set<String> itemSetA,
-                Set<String> itemSetB) {
+        public Producer(final CountDownLatch latch, final Queue<Result> resultQueue, final AtomicInteger producingItemCount,
+                final Set<String> itemSetA, final Set<String> itemSetB) {
             this.latch = latch;
             this.resultQueue = resultQueue;
             this.producingItemCount = producingItemCount;
@@ -66,25 +64,26 @@ public class FanOutQueueLoadTest {
             this.itemSetB = itemSetB;
         }
 
+        @Override
         public void run() {
-            Result result = new Result();
-            String rndString = TestUtil.randomString(messageLength);
+            final Result result = new Result();
+            final String rndString = TestUtil.randomString(messageLength);
             try {
                 latch.countDown();
                 latch.await();
 
                 while (true) {
-                    int count = producingItemCount.incrementAndGet();
+                    final int count = producingItemCount.incrementAndGet();
                     if (count > totalItemCount)
                         break;
-                    String item = rndString + count;
+                    final String item = rndString + count;
                     itemSetA.add(item);
                     itemSetB.add(item);
                     foQueue.enqueue(item.getBytes());
                 }
                 result.status = Status.SUCCESS;
             }
-            catch (Exception e) {
+            catch (final Exception e) {
                 e.printStackTrace();
                 result.status = Status.ERROR;
             }
@@ -99,8 +98,8 @@ public class FanOutQueueLoadTest {
         private final String fanoutId;
         private final Set<String> itemSet;
 
-        public Consumer(CountDownLatch latch, Queue<Result> resultQueue, String fanoutId, AtomicInteger consumingItemCount,
-                Set<String> itemSet) {
+        public Consumer(final CountDownLatch latch, final Queue<Result> resultQueue, final String fanoutId,
+                final AtomicInteger consumingItemCount, final Set<String> itemSet) {
             this.latch = latch;
             this.resultQueue = resultQueue;
             this.consumingItemCount = consumingItemCount;
@@ -108,15 +107,16 @@ public class FanOutQueueLoadTest {
             this.itemSet = itemSet;
         }
 
+        @Override
         public void run() {
-            Result result = new Result();
+            final Result result = new Result();
             try {
                 latch.countDown();
                 latch.await();
 
                 while (true) {
                     String item = null;
-                    int index = consumingItemCount.getAndIncrement();
+                    final int index = consumingItemCount.getAndIncrement();
                     if (index >= totalItemCount)
                         break;
 
@@ -131,7 +131,7 @@ public class FanOutQueueLoadTest {
                 }
                 result.status = Status.SUCCESS;
             }
-            catch (Exception e) {
+            catch (final Exception e) {
                 e.printStackTrace();
                 result.status = Status.ERROR;
             }
@@ -142,7 +142,7 @@ public class FanOutQueueLoadTest {
 
     @Test
     public void runTest() throws Exception {
-        foQueue = new FanOutQueueImpl(testDir, "load_test_one");
+        foQueue = new FanOutQueue(testDir, "load_test_one");
 
         System.out.println("Load test begin ...");
         for (int i = 0; i < loop; i++) {
@@ -154,7 +154,7 @@ public class FanOutQueueLoadTest {
         }
 
         foQueue.close();
-        foQueue = new FanOutQueueImpl(testDir, "load_test_two");
+        foQueue = new FanOutQueue(testDir, "load_test_two");
 
         for (int i = 0; i < loop; i++) {
             System.out.println("[doRunMixed] round " + (i + 1) + " of " + loop);
@@ -175,44 +175,44 @@ public class FanOutQueueLoadTest {
         final Set<String> itemSetA = Collections.newSetFromMap(new ConcurrentHashMap<String, Boolean>());
         final Set<String> itemSetB = Collections.newSetFromMap(new ConcurrentHashMap<String, Boolean>());
 
-        String consumerGroupAFanoutId = "groupA";
-        String consumerGroupBFanoutId = "groupB";
+        final String consumerGroupAFanoutId = "groupA";
+        final String consumerGroupBFanoutId = "groupB";
 
-        CountDownLatch platch = new CountDownLatch(producerNum);
-        CountDownLatch clatchGroupA = new CountDownLatch(consumerGroupANum);
-        CountDownLatch clatchGroupB = new CountDownLatch(consumerGroupBNum);
-        BlockingQueue<Result> producerResults = new LinkedBlockingQueue<Result>();
-        BlockingQueue<Result> consumerGroupAResults = new LinkedBlockingQueue<Result>();
-        BlockingQueue<Result> consumerGroupBResults = new LinkedBlockingQueue<Result>();
+        final CountDownLatch platch = new CountDownLatch(producerNum);
+        final CountDownLatch clatchGroupA = new CountDownLatch(consumerGroupANum);
+        final CountDownLatch clatchGroupB = new CountDownLatch(consumerGroupBNum);
+        final BlockingQueue<Result> producerResults = new LinkedBlockingQueue<Result>();
+        final BlockingQueue<Result> consumerGroupAResults = new LinkedBlockingQueue<Result>();
+        final BlockingQueue<Result> consumerGroupBResults = new LinkedBlockingQueue<Result>();
 
         //run testing
         for (int i = 0; i < producerNum; i++) {
-            Producer p = new Producer(platch, producerResults, producerItemCount, itemSetA, itemSetB);
+            final Producer p = new Producer(platch, producerResults, producerItemCount, itemSetA, itemSetB);
             p.start();
         }
 
         for (int i = 0; i < consumerGroupANum; i++) {
-            Consumer c = new Consumer(clatchGroupA, consumerGroupAResults, consumerGroupAFanoutId, consumerGroupAItemCount, itemSetA);
+            final Consumer c = new Consumer(clatchGroupA, consumerGroupAResults, consumerGroupAFanoutId, consumerGroupAItemCount, itemSetA);
             c.start();
         }
 
         for (int i = 0; i < consumerGroupBNum; i++) {
-            Consumer c = new Consumer(clatchGroupB, consumerGroupBResults, consumerGroupBFanoutId, consumerGroupBItemCount, itemSetB);
+            final Consumer c = new Consumer(clatchGroupB, consumerGroupBResults, consumerGroupBFanoutId, consumerGroupBItemCount, itemSetB);
             c.start();
         }
 
         for (int i = 0; i < consumerGroupANum; i++) {
-            Result result = consumerGroupAResults.take();
+            final Result result = consumerGroupAResults.take();
             assertEquals(result.status, Status.SUCCESS);
         }
 
         for (int i = 0; i < consumerGroupBNum; i++) {
-            Result result = consumerGroupBResults.take();
+            final Result result = consumerGroupBResults.take();
             assertEquals(result.status, Status.SUCCESS);
         }
 
         for (int i = 0; i < producerNum; i++) {
-            Result result = producerResults.take();
+            final Result result = producerResults.take();
             assertEquals(result.status, Status.SUCCESS);
         }
 
@@ -238,24 +238,24 @@ public class FanOutQueueLoadTest {
         final Set<String> itemSetA = Collections.newSetFromMap(new ConcurrentHashMap<String, Boolean>());
         final Set<String> itemSetB = Collections.newSetFromMap(new ConcurrentHashMap<String, Boolean>());
 
-        String consumerGroupAFanoutId = "groupA";
-        String consumerGroupBFanoutId = "groupB";
+        final String consumerGroupAFanoutId = "groupA";
+        final String consumerGroupBFanoutId = "groupB";
 
-        CountDownLatch platch = new CountDownLatch(producerNum);
-        CountDownLatch clatchGroupA = new CountDownLatch(consumerGroupANum);
-        CountDownLatch clatchGroupB = new CountDownLatch(consumerGroupBNum);
-        BlockingQueue<Result> producerResults = new LinkedBlockingQueue<Result>();
-        BlockingQueue<Result> consumerGroupAResults = new LinkedBlockingQueue<Result>();
-        BlockingQueue<Result> consumerGroupBResults = new LinkedBlockingQueue<Result>();
+        final CountDownLatch platch = new CountDownLatch(producerNum);
+        final CountDownLatch clatchGroupA = new CountDownLatch(consumerGroupANum);
+        final CountDownLatch clatchGroupB = new CountDownLatch(consumerGroupBNum);
+        final BlockingQueue<Result> producerResults = new LinkedBlockingQueue<Result>();
+        final BlockingQueue<Result> consumerGroupAResults = new LinkedBlockingQueue<Result>();
+        final BlockingQueue<Result> consumerGroupBResults = new LinkedBlockingQueue<Result>();
 
         //run testing
         for (int i = 0; i < producerNum; i++) {
-            Producer p = new Producer(platch, producerResults, producerItemCount, itemSetA, itemSetB);
+            final Producer p = new Producer(platch, producerResults, producerItemCount, itemSetA, itemSetB);
             p.start();
         }
 
         for (int i = 0; i < producerNum; i++) {
-            Result result = producerResults.take();
+            final Result result = producerResults.take();
             assertEquals(result.status, Status.SUCCESS);
         }
 
@@ -267,22 +267,22 @@ public class FanOutQueueLoadTest {
         assertTrue(itemSetB.size() == totalItemCount);
 
         for (int i = 0; i < consumerGroupANum; i++) {
-            Consumer c = new Consumer(clatchGroupA, consumerGroupAResults, consumerGroupAFanoutId, consumerGroupAItemCount, itemSetA);
+            final Consumer c = new Consumer(clatchGroupA, consumerGroupAResults, consumerGroupAFanoutId, consumerGroupAItemCount, itemSetA);
             c.start();
         }
 
         for (int i = 0; i < consumerGroupBNum; i++) {
-            Consumer c = new Consumer(clatchGroupB, consumerGroupBResults, consumerGroupBFanoutId, consumerGroupBItemCount, itemSetB);
+            final Consumer c = new Consumer(clatchGroupB, consumerGroupBResults, consumerGroupBFanoutId, consumerGroupBItemCount, itemSetB);
             c.start();
         }
 
         for (int i = 0; i < consumerGroupANum; i++) {
-            Result result = consumerGroupAResults.take();
+            final Result result = consumerGroupAResults.take();
             assertEquals(result.status, Status.SUCCESS);
         }
 
         for (int i = 0; i < consumerGroupBNum; i++) {
-            Result result = consumerGroupBResults.take();
+            final Result result = consumerGroupBResults.take();
             assertEquals(result.status, Status.SUCCESS);
         }
 

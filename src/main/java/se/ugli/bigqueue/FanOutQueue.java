@@ -1,5 +1,6 @@
 package se.ugli.bigqueue;
 
+import java.io.Closeable;
 import java.nio.ByteBuffer;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -7,9 +8,8 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
-import se.ugli.bigqueue.page.IMappedPage;
-import se.ugli.bigqueue.page.IMappedPageFactory;
-import se.ugli.bigqueue.page.MappedPageFactoryImpl;
+import se.ugli.bigqueue.page.MappedPageFactory;
+import se.ugli.bigqueue.page.MappedPage;
 import se.ugli.bigqueue.utils.FolderNameValidator;
 
 /**
@@ -28,9 +28,18 @@ import se.ugli.bigqueue.utils.FolderNameValidator;
  * @author bulldog
  *
  */
-public class FanOutQueueImpl implements IFanOutQueue {
+public class FanOutQueue implements Closeable {
 
-    final BigArrayImpl innerArray;
+    /**
+     * Constant represents earliest timestamp
+     */
+    public static final long EARLIEST = -1;
+    /**
+     * Constant represents latest timestamp
+     */
+    public static final long LATEST = -2;
+
+    final BigArray innerArray;
 
     // 2 ^ 3 = 8
     final static int QUEUE_FRONT_INDEX_ITEM_LENGTH_BITS = 3;
@@ -49,21 +58,21 @@ public class FanOutQueueImpl implements IFanOutQueue {
      *
      * @param queueDir  the directory to store queue data
      * @param queueName the name of the queue, will be appended as last part of the queue directory
-     * @param pageSize the back data file size per page in bytes, see minimum allowed {@link BigArrayImpl#MINIMUM_DATA_PAGE_SIZE}
+     * @param pageSize the back data file size per page in bytes, see minimum allowed {@link BigArray#MINIMUM_DATA_PAGE_SIZE}
      */
-    public FanOutQueueImpl(final String queueDir, final String queueName, final int pageSize) {
-        innerArray = new BigArrayImpl(queueDir, queueName, pageSize);
+    public FanOutQueue(final String queueDir, final String queueName, final int pageSize) {
+        innerArray = new BigArray(queueDir, queueName, pageSize);
     }
 
     /**
      * A big, fast and persistent queue implementation with fanout support,
-     * use default back data page size, see {@link BigArrayImpl#DEFAULT_DATA_PAGE_SIZE}
+     * use default back data page size, see {@link BigArray#DEFAULT_DATA_PAGE_SIZE}
      *
      * @param queueDir the directory to store queue data
      * @param queueName the name of the queue, will be appended as last part of the queue directory
      */
-    public FanOutQueueImpl(final String queueDir, final String queueName) {
-        this(queueDir, queueName, BigArrayImpl.DEFAULT_DATA_PAGE_SIZE);
+    public FanOutQueue(final String queueDir, final String queueName) {
+        this(queueDir, queueName, BigArray.DEFAULT_DATA_PAGE_SIZE);
     }
 
     QueueFront getQueueFront(final String fanoutId) {
@@ -80,7 +89,6 @@ public class FanOutQueueImpl implements IFanOutQueue {
         return qf;
     }
 
-    @Override
     public boolean isEmpty(final String fanoutId) {
         try {
             this.innerArray.arrayReadLock.lock();
@@ -94,17 +102,34 @@ public class FanOutQueueImpl implements IFanOutQueue {
         }
     }
 
-    @Override
+    /**
+     * Determines whether the queue is empty
+     *
+     * @return true if empty, false otherwise
+     */
+
     public boolean isEmpty() {
         return this.innerArray.isEmpty();
     }
 
-    @Override
+    /**
+     * Adds an item at the back of the queue
+     *
+     * @param data to be enqueued data
+     * @return index where the item was appended
+     */
+
     public long enqueue(final byte[] data) {
         return innerArray.append(data);
     }
 
-    @Override
+    /**
+     * Retrieves and removes the front of a fan out queue
+     *
+     * @param fanoutId the fanout identifier
+     * @return data at the front of a queue
+     */
+
     public byte[] dequeue(final String fanoutId) {
         try {
             this.innerArray.arrayReadLock.lock();
@@ -141,7 +166,13 @@ public class FanOutQueueImpl implements IFanOutQueue {
         }
     }
 
-    @Override
+    /**
+     * Peek the item at the front of a fanout queue, without removing it from the queue
+     *
+     * @param fanoutId the fanout identifier
+     * @return data at the front of a queue
+     */
+
     public byte[] peek(final String fanoutId) {
         try {
             this.innerArray.arrayReadLock.lock();
@@ -158,7 +189,13 @@ public class FanOutQueueImpl implements IFanOutQueue {
         }
     }
 
-    @Override
+    /**
+     * Peek the length of the item at the front of a fan out queue
+     *
+     * @param fanoutId the fanout identifier
+     * @return data at the front of a queue
+     */
+
     public int peekLength(final String fanoutId) {
         try {
             this.innerArray.arrayReadLock.lock();
@@ -174,7 +211,13 @@ public class FanOutQueueImpl implements IFanOutQueue {
         }
     }
 
-    @Override
+    /**
+     * Peek the timestamp of the item at the front of a fan out queue
+     *
+     * @param fanoutId the fanout identifier
+     * @return data at the front of a queue
+     */
+
     public long peekTimestamp(final String fanoutId) {
         try {
             this.innerArray.arrayReadLock.lock();
@@ -190,22 +233,45 @@ public class FanOutQueueImpl implements IFanOutQueue {
         }
     }
 
-    @Override
+    /**
+     * Retrieves data item at the specific index of the queue
+     *
+     * @param index data item index
+     * @return data at index
+     */
+
     public byte[] get(final long index) {
         return this.innerArray.get(index);
     }
 
-    @Override
+    /**
+     * Get length of data item at specific index of the queue
+     *
+     * @param index data item index
+     * @return length of data item
+     */
+
     public int getLength(final long index) {
         return this.innerArray.getItemLength(index);
     }
 
-    @Override
+    /**
+     * Get timestamp of data item at specific index of the queue, this is the timestamp when corresponding item was appended into the queue.
+     *
+     * @param index data item index
+     * @return timestamp of data item
+     */
+
     public long getTimestamp(final long index) {
         return this.innerArray.getTimestamp(index);
     }
 
-    @Override
+    /**
+     * Remove all data before specific timestamp, truncate back files and advance the queue front if necessary.
+     *
+     * @param timestamp a timestamp
+     */
+
     public void removeBefore(final long timestamp) {
         try {
             this.innerArray.arrayWriteLock.lock();
@@ -225,7 +291,14 @@ public class FanOutQueueImpl implements IFanOutQueue {
         }
     }
 
-    @Override
+    /**
+     * Limit the back file size of this queue, truncate back files and advance the queue front if necessary.
+     *
+     * Note, this is a best effort call, exact size limit can't be guaranteed
+     *
+     * @param sizeLmit size limit
+     */
+
     public void limitBackFileSize(final long sizeLimit) {
         try {
             this.innerArray.arrayWriteLock.lock();
@@ -247,12 +320,25 @@ public class FanOutQueueImpl implements IFanOutQueue {
         }
     }
 
-    @Override
+    /**
+     * Current total size of the back files of this queue
+     *
+     * @return total back file size
+     */
+
     public long getBackFileSize() {
         return this.innerArray.getBackFileSize();
     }
 
-    @Override
+    /**
+     * Find an index closest to the specific timestamp when the corresponding item was enqueued.
+     * to find latest index, use {@link #LATEST} as timestamp.
+     * to find earliest index, use {@link #EARLIEST} as timestamp.
+     *
+     * @param timestamp when the corresponding item was appended
+     * @return an index
+     */
+
     public long findClosestIndex(final long timestamp) {
         try {
             this.innerArray.arrayReadLock.lock();
@@ -269,7 +355,6 @@ public class FanOutQueueImpl implements IFanOutQueue {
         }
     }
 
-    @Override
     public void resetQueueFrontIndex(final String fanoutId, final long index) {
         try {
             this.innerArray.arrayReadLock.lock();
@@ -296,7 +381,6 @@ public class FanOutQueueImpl implements IFanOutQueue {
         }
     }
 
-    @Override
     public long size(final String fanoutId) {
         try {
             this.innerArray.arrayReadLock.lock();
@@ -315,12 +399,26 @@ public class FanOutQueueImpl implements IFanOutQueue {
         }
     }
 
-    @Override
+    /**
+     * Total number of items remaining in the queue.
+     *
+     * @return total number
+     */
+
     public long size() {
         return this.innerArray.size();
     }
 
-    @Override
+    /**
+     * Force to persist current state of the queue,
+     *
+     * normally, you don't need to flush explicitly since:
+     * 1.) FanOutQueue will automatically flush a cached page when it is replaced out,
+     * 2.) FanOutQueue uses memory mapped file technology internally, and the OS will flush the changes even your process crashes,
+     *
+     * call this periodically only if you need transactional reliability and you are aware of the cost to performance.
+     */
+
     public void flush() {
         try {
             this.innerArray.arrayReadLock.lock();
@@ -356,7 +454,6 @@ public class FanOutQueueImpl implements IFanOutQueue {
         }
     }
 
-    @Override
     public void removeAll() {
         try {
             this.innerArray.arrayWriteLock.lock();
@@ -388,7 +485,7 @@ public class FanOutQueueImpl implements IFanOutQueue {
         final AtomicLong index = new AtomicLong();
 
         // factory for queue front index page management(acquire, release, cache)
-        final IMappedPageFactory indexPageFactory;
+        final MappedPageFactory indexPageFactory;
 
         // lock for queue front write management
         final Lock writeLock = new ReentrantLock();
@@ -402,10 +499,10 @@ public class FanOutQueueImpl implements IFanOutQueue {
             }
             this.fanoutId = fanoutId;
             // the ttl does not matter here since queue front index page is always cached
-            this.indexPageFactory = new MappedPageFactoryImpl(QUEUE_FRONT_INDEX_PAGE_SIZE,
+            this.indexPageFactory = new MappedPageFactory(QUEUE_FRONT_INDEX_PAGE_SIZE,
                     innerArray.arrayDirectory + QUEUE_FRONT_INDEX_PAGE_FOLDER_PREFIX + fanoutId, 10 * 1000/*does not matter*/);
 
-            final IMappedPage indexPage = this.indexPageFactory.acquirePage(QUEUE_FRONT_PAGE_INDEX);
+            final MappedPage indexPage = this.indexPageFactory.acquirePage(QUEUE_FRONT_PAGE_INDEX);
 
             final ByteBuffer indexBuffer = indexPage.getLocal(0);
             index.set(indexBuffer.getLong());
@@ -442,24 +539,33 @@ public class FanOutQueueImpl implements IFanOutQueue {
 
         void persistIndex() {
             // persist index
-            final IMappedPage indexPage = this.indexPageFactory.acquirePage(QUEUE_FRONT_PAGE_INDEX);
+            final MappedPage indexPage = this.indexPageFactory.acquirePage(QUEUE_FRONT_PAGE_INDEX);
             final ByteBuffer indexBuffer = indexPage.getLocal(0);
             indexBuffer.putLong(index.get());
             indexPage.setDirty(true);
         }
     }
 
-    @Override
+    /**
+     * Get the queue front index, this is the earliest appended index
+     *
+     * @return an index
+     */
+
     public long getFrontIndex() {
         return this.innerArray.getTailIndex();
     }
 
-    @Override
+    /**
+     * Get the queue rear index, this is the next to be appended index
+     *
+     * @return an index
+     */
+
     public long getRearIndex() {
         return this.innerArray.getHeadIndex();
     }
 
-    @Override
     public long getFrontIndex(final String fanoutId) {
         try {
             this.innerArray.arrayReadLock.lock();

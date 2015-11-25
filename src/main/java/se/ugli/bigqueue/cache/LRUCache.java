@@ -30,9 +30,9 @@ import se.ugli.bigqueue.utils.CloseCommand;
  * @param <K> key
  * @param <V> value
  */
-public class LRUCacheImpl<K, V extends Closeable> implements ILRUCache<K, V> {
+public class LRUCache<K, V extends Closeable> {
 
-    private final static Logger logger = Logger.getLogger(LRUCacheImpl.class);
+    private final static Logger logger = Logger.getLogger(LRUCache.class);
 
     public static final long DEFAULT_TTL = 10 * 1000; // milliseconds
 
@@ -46,12 +46,21 @@ public class LRUCacheImpl<K, V extends Closeable> implements ILRUCache<K, V> {
 
     private final Set<K> keysToRemove = new HashSet<K>();
 
-    public LRUCacheImpl() {
+    public LRUCache() {
         map = new HashMap<K, V>();
         ttlMap = new HashMap<K, TTLValue>();
     }
 
-    @Override
+    /**
+     * Put a keyed resource with specific ttl into the cache
+     *
+     * This call will increment the reference counter of the keyed resource.
+     *
+     * @param key the key of the cached resource
+     * @param value the to be cached resource
+     * @param ttlInMilliSeconds time to live in milliseconds
+     */
+
     public void put(final K key, final V value, final long ttlInMilliSeconds) {
         Collection<V> valuesToClose = null;
         try {
@@ -78,7 +87,15 @@ public class LRUCacheImpl<K, V extends Closeable> implements ILRUCache<K, V> {
         }
     }
 
-    @Override
+    /**
+     * Put a keyed resource with default ttl into the cache
+     *
+     * This call will increment the reference counter of the keyed resource.
+     *
+     * @param key the key of the cached resource
+     * @param value the to be cached resource
+     */
+
     public void put(final K key, final V value) {
         this.put(key, value, DEFAULT_TTL);
     }
@@ -111,7 +128,15 @@ public class LRUCacheImpl<K, V extends Closeable> implements ILRUCache<K, V> {
         return valuesToClose;
     }
 
-    @Override
+    /**
+     * Get a cached resource with specific key
+     *
+     * This call will increment the reference counter of the keyed resource.
+     *
+     * @param key the key of the cached resource
+     * @return cached resource if exists
+     */
+
     public V get(final K key) {
         try {
             readLock.lock();
@@ -158,7 +183,6 @@ public class LRUCacheImpl<K, V extends Closeable> implements ILRUCache<K, V> {
         }
     }
 
-    @Override
     public void release(final K key) {
         try {
             readLock.lock();
@@ -173,7 +197,12 @@ public class LRUCacheImpl<K, V extends Closeable> implements ILRUCache<K, V> {
         }
     }
 
-    @Override
+    /**
+     * The size of the cache, equals to current total number of cached resources.
+     *
+     * @return the size of the cache
+     */
+
     public int size() {
         try {
             readLock.lock();
@@ -184,7 +213,10 @@ public class LRUCacheImpl<K, V extends Closeable> implements ILRUCache<K, V> {
         }
     }
 
-    @Override
+    /**
+     * Remove all cached resource from the cache and close them asynchronously afterwards.
+     */
+
     public void removeAll() {
         try {
             writeLock.lock();
@@ -206,7 +238,13 @@ public class LRUCacheImpl<K, V extends Closeable> implements ILRUCache<K, V> {
 
     }
 
-    @Override
+    /**
+     * Remove the resource with specific key from the cache and close it synchronously afterwards.
+     *
+     * @param key the key of the cached resource
+     * @return the removed resource if exists
+     */
+
     public V remove(final K key) {
         try {
             writeLock.lock();
@@ -223,7 +261,11 @@ public class LRUCacheImpl<K, V extends Closeable> implements ILRUCache<K, V> {
 
     }
 
-    @Override
+    /**
+     * All values cached
+     * @return a collection
+     */
+
     public Collection<V> getValues() {
         try {
             readLock.lock();

@@ -15,17 +15,16 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.After;
 import org.junit.Test;
 
-import se.ugli.bigqueue.BigArrayImpl;
-import se.ugli.bigqueue.IBigArray;
+import se.ugli.bigqueue.BigArray;
 import se.ugli.bigqueue.TestUtil;
 
 public class BigArrayPerfTest {
 
     private static String testDir = TestUtil.TEST_BASE_DIR + "bigarray/perf";
-    private static IBigArray bigArray;
+    private static BigArray bigArray;
 
     static {
-        bigArray = new BigArrayImpl(testDir, "perf_test");
+        bigArray = new BigArray(testDir, "perf_test");
     }
 
     // configurable parameters

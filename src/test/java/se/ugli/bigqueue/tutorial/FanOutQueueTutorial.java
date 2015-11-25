@@ -4,8 +4,7 @@ import java.io.IOException;
 
 import org.junit.Test;
 
-import se.ugli.bigqueue.FanOutQueueImpl;
-import se.ugli.bigqueue.IFanOutQueue;
+import se.ugli.bigqueue.FanOutQueue;
 
 /**
  * A tutorial to show the basic API usage of the fanout queue.
@@ -17,11 +16,11 @@ public class FanOutQueueTutorial {
 
     @Test
     public void demo() throws IOException {
-        IFanOutQueue foQueue = null;
+        FanOutQueue foQueue = null;
 
         try {
             // create a new fanout queue
-            foQueue = new FanOutQueueImpl("d:/tutorial/fanout-queue", "demo");
+            foQueue = new FanOutQueue("d:/tutorial/fanout-queue", "demo");
 
             // enqueue some logs
             for (int i = 0; i < 10; i++) {

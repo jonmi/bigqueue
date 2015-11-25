@@ -18,14 +18,13 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.After;
 import org.junit.Test;
 
-import se.ugli.bigqueue.BigArrayImpl;
-import se.ugli.bigqueue.IBigArray;
+import se.ugli.bigqueue.BigArray;
 import se.ugli.bigqueue.TestUtil;
 
 public class BigArrayLoadTest {
 
     private static String testDir = TestUtil.TEST_BASE_DIR + "bigarray/load";
-    private static IBigArray bigArray;
+    private static BigArray bigArray;
 
     // configurable parameters
     //////////////////////////////////////////////////////////////////
@@ -46,9 +45,8 @@ public class BigArrayLoadTest {
 
     @After
     public void clean() {
-        if (bigArray != null) {
+        if (bigArray != null)
             bigArray.removeAll();
-        }
     }
 
     private static final AtomicInteger producingItemCount = new AtomicInteger(0);
@@ -58,29 +56,30 @@ public class BigArrayLoadTest {
         private final CountDownLatch latch;
         private final Queue<Result> resultQueue;
 
-        public Producer(CountDownLatch latch, Queue<Result> resultQueue) {
+        public Producer(final CountDownLatch latch, final Queue<Result> resultQueue) {
             this.latch = latch;
             this.resultQueue = resultQueue;
         }
 
+        @Override
         public void run() {
-            Result result = new Result();
-            String rndString = TestUtil.randomString(messageLength);
+            final Result result = new Result();
+            final String rndString = TestUtil.randomString(messageLength);
             try {
                 latch.countDown();
                 latch.await();
 
                 while (true) {
-                    int count = producingItemCount.incrementAndGet();
+                    final int count = producingItemCount.incrementAndGet();
                     if (count > totalItemCount)
                         break;
-                    String item = rndString + '-' + count;
+                    final String item = rndString + '-' + count;
                     itemMap.put(item, new AtomicInteger(0));
                     bigArray.append(item.getBytes());
                 }
                 result.status = Status.SUCCESS;
             }
-            catch (Exception e) {
+            catch (final Exception e) {
                 e.printStackTrace();
                 result.status = Status.ERROR;
             }
@@ -94,34 +93,34 @@ public class BigArrayLoadTest {
         private final Queue<Result> resultQueue;
         private final List<Long> indexList = new ArrayList<Long>();
 
-        public RandomConsumer(CountDownLatch latch, Queue<Result> resultQueue) {
+        public RandomConsumer(final CountDownLatch latch, final Queue<Result> resultQueue) {
             this.latch = latch;
             this.resultQueue = resultQueue;
             // permute the index to let consumers consume randomly.
-            for (long i = 0; i < totalItemCount; i++) {
+            for (long i = 0; i < totalItemCount; i++)
                 indexList.add(i);
-            }
             Collections.shuffle(indexList);
         }
 
+        @Override
         public void run() {
-            Result result = new Result();
+            final Result result = new Result();
             try {
                 latch.countDown();
                 latch.await();
 
-                for (long index : indexList) {
+                for (final long index : indexList) {
 
-                    byte[] data = bigArray.get(index);
+                    final byte[] data = bigArray.get(index);
                     assertNotNull(data);
-                    String item = new String(data);
-                    AtomicInteger counter = itemMap.get(item);
+                    final String item = new String(data);
+                    final AtomicInteger counter = itemMap.get(item);
                     assertNotNull(counter);
                     counter.incrementAndGet();
                 }
                 result.status = Status.SUCCESS;
             }
-            catch (Exception e) {
+            catch (final Exception e) {
                 e.printStackTrace();
                 result.status = Status.ERROR;
             }
@@ -134,31 +133,31 @@ public class BigArrayLoadTest {
         private final CountDownLatch latch;
         private final Queue<Result> resultQueue;
 
-        public SequentialConsumer(CountDownLatch latch, Queue<Result> resultQueue) {
+        public SequentialConsumer(final CountDownLatch latch, final Queue<Result> resultQueue) {
             this.latch = latch;
             this.resultQueue = resultQueue;
         }
 
+        @Override
         public void run() {
-            Result result = new Result();
+            final Result result = new Result();
             try {
                 latch.countDown();
                 latch.await();
 
                 for (long index = 0; index < totalItemCount; index++) {
-                    while (index >= bigArray.getHeadIndex()) {
+                    while (index >= bigArray.getHeadIndex())
                         Thread.sleep(20); // no item to consume yet, just wait a moment
-                    }
-                    byte[] data = bigArray.get(index);
+                    final byte[] data = bigArray.get(index);
                     assertNotNull(data);
-                    String item = new String(data);
-                    AtomicInteger counter = itemMap.get(item);
+                    final String item = new String(data);
+                    final AtomicInteger counter = itemMap.get(item);
                     assertNotNull(counter);
                     counter.incrementAndGet();
                 }
                 result.status = Status.SUCCESS;
             }
-            catch (Exception e) {
+            catch (final Exception e) {
                 e.printStackTrace();
                 result.status = Status.ERROR;
             }
@@ -168,7 +167,7 @@ public class BigArrayLoadTest {
 
     @Test
     public void runTest() throws Exception {
-        bigArray = new BigArrayImpl(testDir, "load_test");
+        bigArray = new BigArray(testDir, "load_test");
 
         System.out.println("Load test begin ...");
         for (int i = 0; i < loop; i++) {
@@ -182,7 +181,7 @@ public class BigArrayLoadTest {
         }
 
         bigArray.close();
-        bigArray = new BigArrayImpl(testDir, "load_test");
+        bigArray = new BigArray(testDir, "load_test");
 
         for (int i = 0; i < loop; i++) {
             System.out.println("[doRunMixed] round " + (i + 1) + " of " + loop);
@@ -199,19 +198,19 @@ public class BigArrayLoadTest {
 
     public void doRunProduceThenConsume() throws Exception {
         //prepare
-        CountDownLatch platch = new CountDownLatch(producerNum);
-        CountDownLatch clatch = new CountDownLatch(consumerNum);
-        BlockingQueue<Result> producerResults = new LinkedBlockingQueue<Result>();
-        BlockingQueue<Result> consumerResults = new LinkedBlockingQueue<Result>();
+        final CountDownLatch platch = new CountDownLatch(producerNum);
+        final CountDownLatch clatch = new CountDownLatch(consumerNum);
+        final BlockingQueue<Result> producerResults = new LinkedBlockingQueue<Result>();
+        final BlockingQueue<Result> consumerResults = new LinkedBlockingQueue<Result>();
 
         //run testing
         for (int i = 0; i < producerNum; i++) {
-            Producer p = new Producer(platch, producerResults);
+            final Producer p = new Producer(platch, producerResults);
             p.start();
         }
 
         for (int i = 0; i < producerNum; i++) {
-            Result result = producerResults.take();
+            final Result result = producerResults.take();
             assertEquals(result.status, Status.SUCCESS);
         }
 
@@ -220,55 +219,53 @@ public class BigArrayLoadTest {
         assertTrue(itemMap.size() == totalItemCount);
 
         for (int i = 0; i < consumerNum; i++) {
-            RandomConsumer c = new RandomConsumer(clatch, consumerResults);
+            final RandomConsumer c = new RandomConsumer(clatch, consumerResults);
             c.start();
         }
 
         for (int i = 0; i < consumerNum; i++) {
-            Result result = consumerResults.take();
+            final Result result = consumerResults.take();
             assertEquals(result.status, Status.SUCCESS);
         }
 
         assertTrue(bigArray.size() == totalItemCount);
         assertTrue(itemMap.size() == totalItemCount);
-        for (AtomicInteger counter : itemMap.values()) {
+        for (final AtomicInteger counter : itemMap.values())
             assertTrue(counter.get() == consumerNum);
-        }
     }
 
     public void doRunMixed() throws Exception {
         //prepare
-        CountDownLatch allLatch = new CountDownLatch(producerNum + consumerNum);
-        BlockingQueue<Result> producerResults = new LinkedBlockingQueue<Result>();
-        BlockingQueue<Result> consumerResults = new LinkedBlockingQueue<Result>();
+        final CountDownLatch allLatch = new CountDownLatch(producerNum + consumerNum);
+        final BlockingQueue<Result> producerResults = new LinkedBlockingQueue<Result>();
+        final BlockingQueue<Result> consumerResults = new LinkedBlockingQueue<Result>();
 
         //run testing
         for (int i = 0; i < producerNum; i++) {
-            Producer p = new Producer(allLatch, producerResults);
+            final Producer p = new Producer(allLatch, producerResults);
             p.start();
         }
 
         for (int i = 0; i < consumerNum; i++) {
-            SequentialConsumer c = new SequentialConsumer(allLatch, consumerResults);
+            final SequentialConsumer c = new SequentialConsumer(allLatch, consumerResults);
             c.start();
         }
 
         //verify
         for (int i = 0; i < producerNum; i++) {
-            Result result = producerResults.take();
+            final Result result = producerResults.take();
             assertEquals(result.status, Status.SUCCESS);
         }
 
         for (int i = 0; i < consumerNum; i++) {
-            Result result = consumerResults.take();
+            final Result result = consumerResults.take();
             assertEquals(result.status, Status.SUCCESS);
         }
 
         assertTrue(bigArray.size() == totalItemCount);
         assertTrue(itemMap.size() == totalItemCount);
-        for (AtomicInteger counter : itemMap.values()) {
+        for (final AtomicInteger counter : itemMap.values())
             assertTrue(counter.get() == consumerNum);
-        }
     }
 
 }

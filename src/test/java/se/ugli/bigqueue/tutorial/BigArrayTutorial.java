@@ -8,8 +8,7 @@ import java.io.IOException;
 
 import org.junit.Test;
 
-import se.ugli.bigqueue.BigArrayImpl;
-import se.ugli.bigqueue.IBigArray;
+import se.ugli.bigqueue.BigArray;
 
 /**
  * A tutorial to show the basic API usage of the big array.
@@ -21,10 +20,10 @@ public class BigArrayTutorial {
 
     @Test
     public void demo() throws IOException {
-        IBigArray bigArray = null;
+        BigArray bigArray = null;
         try {
             // create a new big array
-            bigArray = new BigArrayImpl("d:/bigarray/tutorial", "demo");
+            bigArray = new BigArray("d:/bigarray/tutorial", "demo");
             // ensure the new big array is empty
             assertNotNull(bigArray);
             assertTrue(bigArray.isEmpty());

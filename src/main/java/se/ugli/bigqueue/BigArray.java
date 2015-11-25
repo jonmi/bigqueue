@@ -1,5 +1,6 @@
 package se.ugli.bigqueue;
 
+import java.io.Closeable;
 import java.io.File;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
@@ -9,9 +10,8 @@ import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
-import se.ugli.bigqueue.page.IMappedPage;
-import se.ugli.bigqueue.page.IMappedPageFactory;
-import se.ugli.bigqueue.page.MappedPageFactoryImpl;
+import se.ugli.bigqueue.page.MappedPageFactory;
+import se.ugli.bigqueue.page.MappedPage;
 import se.ugli.bigqueue.utils.Calculator;
 import se.ugli.bigqueue.utils.FileUtil;
 
@@ -31,7 +31,9 @@ import se.ugli.bigqueue.utils.FileUtil;
  * @author bulldog
  *
  */
-public class BigArrayImpl implements IBigArray {
+public class BigArray implements Closeable {
+
+    public static final long NOT_FOUND = -1;
 
     // folder name for index page
     final static String INDEX_PAGE_FOLDER = "index";
@@ -77,11 +79,11 @@ public class BigArrayImpl implements IBigArray {
     String arrayDirectory;
 
     // factory for index page management(acquire, release, cache)
-    IMappedPageFactory indexPageFactory;
+    MappedPageFactory indexPageFactory;
     // factory for data page management(acquire, release, cache)
-    IMappedPageFactory dataPageFactory;
+    MappedPageFactory dataPageFactory;
     // factory for meta data page management(acquire, release, cache)
-    IMappedPageFactory metaPageFactory;
+    MappedPageFactory metaPageFactory;
 
     // only use the first page
     static final long META_DATA_PAGE_INDEX = 0;
@@ -114,7 +116,7 @@ public class BigArrayImpl implements IBigArray {
      * @param arrayDir directory for array data store
      * @param arrayName the name of the array, will be appended as last part of the array directory
      */
-    public BigArrayImpl(final String arrayDir, final String arrayName) {
+    public BigArray(final String arrayDir, final String arrayName) {
         this(arrayDir, arrayName, DEFAULT_DATA_PAGE_SIZE);
     }
 
@@ -125,7 +127,7 @@ public class BigArrayImpl implements IBigArray {
      * @param arrayName the name of the array, will be appended as last part of the array directory
      * @param pageSize the back data file size per page in bytes, see minimum allowed {@link #MINIMUM_DATA_PAGE_SIZE}.
      */
-    public BigArrayImpl(final String arrayDir, final String arrayName, final int pageSize) {
+    public BigArray(final String arrayDir, final String arrayName, final int pageSize) {
         arrayDirectory = arrayDir;
         if (!arrayDirectory.endsWith(File.separator))
             arrayDirectory += File.separator;
@@ -144,16 +146,16 @@ public class BigArrayImpl implements IBigArray {
         this.commonInit();
     }
 
-    public String getArrayDirectory() {
+    String getArrayDirectory() {
         return this.arrayDirectory;
     }
 
     void commonInit() {
         // initialize page factories
-        this.indexPageFactory = new MappedPageFactoryImpl(INDEX_PAGE_SIZE, this.arrayDirectory + INDEX_PAGE_FOLDER, INDEX_PAGE_CACHE_TTL);
-        this.dataPageFactory = new MappedPageFactoryImpl(DATA_PAGE_SIZE, this.arrayDirectory + DATA_PAGE_FOLDER, DATA_PAGE_CACHE_TTL);
+        this.indexPageFactory = new MappedPageFactory(INDEX_PAGE_SIZE, this.arrayDirectory + INDEX_PAGE_FOLDER, INDEX_PAGE_CACHE_TTL);
+        this.dataPageFactory = new MappedPageFactory(DATA_PAGE_SIZE, this.arrayDirectory + DATA_PAGE_FOLDER, DATA_PAGE_CACHE_TTL);
         // the ttl does not matter here since meta data page is always cached
-        this.metaPageFactory = new MappedPageFactoryImpl(META_DATA_PAGE_SIZE, this.arrayDirectory + META_DATA_PAGE_FOLDER,
+        this.metaPageFactory = new MappedPageFactory(META_DATA_PAGE_SIZE, this.arrayDirectory + META_DATA_PAGE_FOLDER,
                 10 * 1000/*does not matter*/);
 
         // initialize array indexes
@@ -163,7 +165,6 @@ public class BigArrayImpl implements IBigArray {
         initDataPageIndex();
     }
 
-    @Override
     public void removeAll() {
         try {
             arrayWriteLock.lock();
@@ -179,7 +180,13 @@ public class BigArrayImpl implements IBigArray {
         }
     }
 
-    @Override
+    /**
+     * Remove all data before specific index, this will advance the array tail to index and
+     * delete back page files before index.
+     *
+     * @param index an index
+     */
+
     public void removeBeforeIndex(final long index) {
         try {
             arrayWriteLock.lock();
@@ -204,7 +211,13 @@ public class BigArrayImpl implements IBigArray {
         }
     }
 
-    @Override
+    /**
+     * Remove all data before specific timestamp, this will advance the array tail and delete back page files
+     * accordingly.
+     *
+     * @param timestamp a timestamp
+     */
+
     public void removeBefore(final long timestamp) {
         try {
             arrayWriteLock.lock();
@@ -230,7 +243,7 @@ public class BigArrayImpl implements IBigArray {
 
     // find out array head/tail from the meta data
     void initArrayIndex() {
-        final IMappedPage metaDataPage = this.metaPageFactory.acquirePage(META_DATA_PAGE_INDEX);
+        final MappedPage metaDataPage = this.metaPageFactory.acquirePage(META_DATA_PAGE_INDEX);
         final ByteBuffer metaBuf = metaDataPage.getLocal(0);
         final long head = metaBuf.getLong();
         final long tail = metaBuf.getLong();
@@ -247,7 +260,7 @@ public class BigArrayImpl implements IBigArray {
             headDataItemOffset = 0;
         }
         else {
-            IMappedPage previousIndexPage = null;
+            MappedPage previousIndexPage = null;
             long previousIndexPageIndex = -1;
             try {
                 long previousIndex = this.arrayHeadIndex.get() - 1;
@@ -274,13 +287,16 @@ public class BigArrayImpl implements IBigArray {
 
     /**
      * Append the data into the head of the array
+     *
+     * @param data binary data to append
+     * @return appended index
      */
-    @Override
+
     public long append(final byte[] data) {
         try {
             arrayReadLock.lock();
-            IMappedPage toAppendDataPage = null;
-            IMappedPage toAppendIndexPage = null;
+            MappedPage toAppendDataPage = null;
+            MappedPage toAppendIndexPage = null;
             long toAppendIndexPageIndex = -1L;
             long toAppendDataPageIndex = -1L;
 
@@ -332,7 +348,7 @@ public class BigArrayImpl implements IBigArray {
                 this.arrayHeadIndex.incrementAndGet();
 
                 // update meta data
-                final IMappedPage metaDataPage = this.metaPageFactory.acquirePage(META_DATA_PAGE_INDEX);
+                final MappedPage metaDataPage = this.metaPageFactory.acquirePage(META_DATA_PAGE_INDEX);
                 final ByteBuffer metaDataBuf = metaDataPage.getLocal(0);
                 metaDataBuf.putLong(this.arrayHeadIndex.get());
                 metaDataBuf.putLong(this.arrayTailIndex.get());
@@ -357,7 +373,16 @@ public class BigArrayImpl implements IBigArray {
         }
     }
 
-    @Override
+    /**
+     * Force to persist newly appended data,
+     *
+     * normally, you don't need to flush explicitly since:
+     * 1.) BigArray will automatically flush a cached page when it is replaced out,
+     * 2.) BigArray uses memory mapped file technology internally, and the OS will flush the changes even your process crashes,
+     *
+     * call this periodically only if you need transactional reliability and you are aware of the cost to performance.
+     */
+
     public void flush() {
         try {
             arrayReadLock.lock();
@@ -380,13 +405,19 @@ public class BigArrayImpl implements IBigArray {
 
     }
 
-    @Override
+    /**
+     * Get the data at specific index
+     *
+     * @param index valid data index
+     * @return binary data if the index is valid
+     */
+
     public byte[] get(final long index) {
         try {
             arrayReadLock.lock();
             validateIndex(index);
 
-            IMappedPage dataPage = null;
+            MappedPage dataPage = null;
             long dataPageIndex = -1L;
             try {
                 final ByteBuffer indexItemBuffer = this.getIndexItemBuffer(index);
@@ -407,7 +438,15 @@ public class BigArrayImpl implements IBigArray {
         }
     }
 
-    @Override
+    /**
+     * Get the timestamp of data at specific index,
+     *
+     * this is the timestamp when the data was appended.
+     *
+     * @param index valid data index
+     * @return timestamp when the data was appended
+     */
+
     public long getTimestamp(final long index) {
         try {
             arrayReadLock.lock();
@@ -427,7 +466,7 @@ public class BigArrayImpl implements IBigArray {
 
     ByteBuffer getIndexItemBuffer(final long index) {
 
-        IMappedPage indexPage = null;
+        MappedPage indexPage = null;
         long indexPageIndex = -1L;
         try {
             indexPageIndex = Calculator.div(index, INDEX_ITEMS_PER_PAGE_BITS); // shift optimization
@@ -452,7 +491,12 @@ public class BigArrayImpl implements IBigArray {
             throw new IndexOutOfBoundsException();
     }
 
-    @Override
+    /**
+     * The total number of items has been appended into the array
+     *
+     * @return total number
+     */
+
     public long size() {
         try {
             arrayReadLock.lock();
@@ -466,7 +510,15 @@ public class BigArrayImpl implements IBigArray {
         }
     }
 
-    @Override
+    /**
+     * The head of the array.
+     *
+     * This is the next to append index, the index of the last appended data
+     * is [headIndex - 1] if the array is not empty.
+     *
+     * @return an index
+     */
+
     public long getHeadIndex() {
         try {
             arrayReadLock.lock();
@@ -477,7 +529,14 @@ public class BigArrayImpl implements IBigArray {
         }
     }
 
-    @Override
+    /**
+     * The tail of the array.
+     *
+     * The is the index of the first appended data
+     *
+     * @return an index
+     */
+
     public long getTailIndex() {
         try {
             arrayReadLock.lock();
@@ -488,7 +547,12 @@ public class BigArrayImpl implements IBigArray {
         }
     }
 
-    @Override
+    /**
+     * Check if the array is empty or not
+     *
+     * @return true if empty false otherwise
+     */
+
     public boolean isEmpty() {
         try {
             arrayReadLock.lock();
@@ -499,7 +563,14 @@ public class BigArrayImpl implements IBigArray {
         }
     }
 
-    @Override
+    /**
+     * Check if the ring space of java long type has all been used up.
+     *
+     * can always assume false, if true, the world is end:)
+     *
+     * @return array full or not
+     */
+
     public boolean isFull() {
         try {
             arrayReadLock.lock();
@@ -529,12 +600,23 @@ public class BigArrayImpl implements IBigArray {
         }
     }
 
-    @Override
+    /**
+     * Get the back data file size per page.
+     *
+     * @return size per page
+     */
+
     public int getDataPageSize() {
         return DATA_PAGE_SIZE;
     }
 
-    @Override
+    /**
+     * Find an index closest to the specific timestamp when the corresponding item was appended
+     *
+     * @param timestamp when the corresponding item was appended
+     * @return an index
+     */
+
     public long findClosestIndex(final long timestamp) {
         try {
             arrayReadLock.lock();
@@ -595,7 +677,12 @@ public class BigArrayImpl implements IBigArray {
             return mid;
     }
 
-    @Override
+    /**
+     * Get total size of back files(index and data files) of the big array
+     *
+     * @return total size of back files
+     */
+
     public long getBackFileSize() {
         try {
             arrayReadLock.lock();
@@ -608,7 +695,13 @@ public class BigArrayImpl implements IBigArray {
         }
     }
 
-    @Override
+    /**
+     * limit the back file size, truncate back file and advance array tail index accordingly,
+     * Note, this is a best effort call, exact size limit can't be guaranteed
+     *
+     * @param sizeLimit the size to limit
+     */
+
     public void limitBackFileSize(final long sizeLimit) {
         if (sizeLimit < INDEX_PAGE_SIZE + DATA_PAGE_SIZE)
             return; // ignore, one index page + one data page are minimum for big array to work correctly
@@ -658,7 +751,14 @@ public class BigArrayImpl implements IBigArray {
 
     }
 
-    @Override
+    /**
+     * Get the data item length at specific index
+     *
+     * @param index valid data index
+     * @return the length of binary data if the index is valid
+     * @ if there is any IO error
+     */
+
     public int getItemLength(final long index) {
         try {
             arrayReadLock.lock();

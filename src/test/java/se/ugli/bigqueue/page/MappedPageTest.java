@@ -17,22 +17,19 @@ import org.junit.After;
 import org.junit.Test;
 
 import se.ugli.bigqueue.TestUtil;
-import se.ugli.bigqueue.page.IMappedPage;
-import se.ugli.bigqueue.page.IMappedPageFactory;
-import se.ugli.bigqueue.page.MappedPageFactoryImpl;
 import se.ugli.bigqueue.utils.FileUtil;
 
 public class MappedPageTest {
 
-    private IMappedPageFactory mappedPageFactory;
+    private MappedPageFactory mappedPageFactory;
     private final String testDir = TestUtil.TEST_BASE_DIR + "bigqueue/unit/mapped_page_test";
 
     @Test
     public void testSingleThread() {
         final int pageSize = 1024 * 1024 * 32;
-        mappedPageFactory = new MappedPageFactoryImpl(pageSize, testDir + "/test_single_thread", 2 * 1000);
+        mappedPageFactory = new MappedPageFactory(pageSize, testDir + "/test_single_thread", 2 * 1000);
 
-        final IMappedPage mappedPage = this.mappedPageFactory.acquirePage(0);
+        final MappedPage mappedPage = this.mappedPageFactory.acquirePage(0);
         assertNotNull(mappedPage);
 
         ByteBuffer buffer = mappedPage.getLocal(0);
@@ -65,12 +62,12 @@ public class MappedPageTest {
     @Test
     public void testMultiThreads() {
         final int pageSize = 1024 * 1024 * 32;
-        mappedPageFactory = new MappedPageFactoryImpl(pageSize, testDir + "/test_multi_threads", 2 * 1000);
+        mappedPageFactory = new MappedPageFactory(pageSize, testDir + "/test_multi_threads", 2 * 1000);
 
         final int threadNum = 100;
         final int pageNumLimit = 50;
 
-        final Set<IMappedPage> pageSet = Collections.newSetFromMap(new ConcurrentHashMap<IMappedPage, Boolean>());
+        final Set<MappedPage> pageSet = Collections.newSetFromMap(new ConcurrentHashMap<MappedPage, Boolean>());
         final List<ByteBuffer> localBufferList = Collections.synchronizedList(new ArrayList<ByteBuffer>());
 
         final Worker[] workers = new Worker[threadNum];
@@ -100,12 +97,12 @@ public class MappedPageTest {
     private static class Worker extends Thread {
         private final int id;
         private final int pageNumLimit;
-        private final IMappedPageFactory pageFactory;
-        private final Set<IMappedPage> sharedPageSet;
+        private final MappedPageFactory pageFactory;
+        private final Set<MappedPage> sharedPageSet;
         private final List<ByteBuffer> localBufferList;
 
-        public Worker(final int id, final IMappedPageFactory pageFactory, final int pageNumLimit, final Set<IMappedPage> sharedPageSet,
-                final List<ByteBuffer> localBufferList) {
+        public Worker(final int id, final MappedPageFactory pageFactory, final int pageNumLimit,
+                final Set<MappedPage> sharedPageSet, final List<ByteBuffer> localBufferList) {
             this.id = id;
             this.pageFactory = pageFactory;
             this.sharedPageSet = sharedPageSet;
@@ -117,7 +114,7 @@ public class MappedPageTest {
         @Override
         public void run() {
             for (int i = 0; i < pageNumLimit; i++) {
-                final IMappedPage page = this.pageFactory.acquirePage(i);
+                final MappedPage page = this.pageFactory.acquirePage(i);
                 sharedPageSet.add(page);
                 localBufferList.add(page.getLocal(0));
 

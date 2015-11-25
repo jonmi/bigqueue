@@ -12,18 +12,17 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.After;
 import org.junit.Test;
 
-import se.ugli.bigqueue.BigQueueImpl;
-import se.ugli.bigqueue.IBigQueue;
+import se.ugli.bigqueue.BigQueue;
 import se.ugli.bigqueue.TestUtil;
 
 public class BigQueuePerfTest {
 
     private static String testDir = TestUtil.TEST_BASE_DIR + "bigqueue/perf";
-    private static IBigQueue bigQueue;
+    private static BigQueue bigQueue;
     private static BlockingQueue<byte[]> memoryQueue = new LinkedBlockingQueue<byte[]>();
 
     static {
-        bigQueue = new BigQueueImpl(testDir, "perf_test");
+        bigQueue = new BigQueue(testDir, "perf_test");
     }
 
     // configurable parameters

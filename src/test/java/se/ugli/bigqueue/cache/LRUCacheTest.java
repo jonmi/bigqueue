@@ -12,15 +12,13 @@ import java.util.Random;
 import org.junit.Test;
 
 import se.ugli.bigqueue.TestUtil;
-import se.ugli.bigqueue.cache.ILRUCache;
-import se.ugli.bigqueue.cache.LRUCacheImpl;
 
 public class LRUCacheTest {
 
     @Test
     public void singleThreadTest() {
 
-        final ILRUCache<Integer, TestObject> cache = new LRUCacheImpl<Integer, TestObject>();
+        final LRUCache<Integer, TestObject> cache = new LRUCache<Integer, TestObject>();
 
         final TestObject obj = new TestObject();
         cache.put(1, obj, 500);
@@ -81,7 +79,7 @@ public class LRUCacheTest {
 
     @Test
     public void multiThreadsTest() {
-        ILRUCache<Integer, TestObject> cache = new LRUCacheImpl<Integer, TestObject>();
+        LRUCache<Integer, TestObject> cache = new LRUCache<Integer, TestObject>();
         int threadNum = 100;
 
         final Worker[] workers = new Worker[threadNum];
@@ -105,7 +103,7 @@ public class LRUCacheTest {
 
         assertTrue(cache.size() == 0);
 
-        cache = new LRUCacheImpl<Integer, TestObject>();
+        cache = new LRUCache<Integer, TestObject>();
         threadNum = 100;
 
         final RandomWorker[] randomWorkers = new RandomWorker[threadNum];
@@ -179,9 +177,9 @@ public class LRUCacheTest {
 
     private static class Worker extends Thread {
         private final int id;
-        private final ILRUCache<Integer, TestObject> cache;
+        private final LRUCache<Integer, TestObject> cache;
 
-        public Worker(final int id, final ILRUCache<Integer, TestObject> cache) {
+        public Worker(final int id, final LRUCache<Integer, TestObject> cache) {
             this.id = id;
             this.cache = cache;
         }
@@ -224,9 +222,9 @@ public class LRUCacheTest {
     private static class RandomWorker extends Thread {
         private final int idLimit;
         private final Random random = new Random();
-        private final ILRUCache<Integer, TestObject> cache;
+        private final LRUCache<Integer, TestObject> cache;
 
-        public RandomWorker(final int idLimit, final ILRUCache<Integer, TestObject> cache) {
+        public RandomWorker(final int idLimit, final LRUCache<Integer, TestObject> cache) {
             this.idLimit = idLimit;
             this.cache = cache;
         }

@@ -9,8 +9,7 @@ import java.io.IOException;
 
 import org.junit.Test;
 
-import se.ugli.bigqueue.BigQueueImpl;
-import se.ugli.bigqueue.IBigQueue;
+import se.ugli.bigqueue.BigQueue;
 
 /**
  * A tutorial to show the basic API usage of the big queue.
@@ -23,11 +22,11 @@ public class BigQueueTutorial {
     @Test
     public void demo() throws IOException {
 
-        IBigQueue bigQueue = null;
+        BigQueue bigQueue = null;
 
         try {
             // create a new big queue
-            bigQueue = new BigQueueImpl("d:/bigqueue/tutorial", "demo");
+            bigQueue = new BigQueue("d:/bigqueue/tutorial", "demo");
 
             // ensure the new big queue is empty
             assertNotNull(bigQueue);
