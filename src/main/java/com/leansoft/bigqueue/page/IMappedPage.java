@@ -9,39 +9,39 @@ import java.nio.ByteBuffer;
  *
  */
 public interface IMappedPage {
-	
-	/**
-	 * Get a thread local copy of the mapped page buffer
-	 * 
-	 * @param position start position(relative to the start position of source mapped page buffer) of the thread local buffer
-	 * @return a byte buffer with specific position as start position.
-	 */
-	ByteBuffer getLocal(int position);
-	
-	/**
-	 * Get data from a thread local copy of the mapped page buffer
-	 * 
-	 * @param position start position(relative to the start position of source mapped page buffer) of the thread local buffer
-	 * @param length the length to fetch
-	 * @return byte data
-	 */
-	public byte[] getLocal(int position, int length);
-	
-	boolean isClosed();
-	
-	void setDirty(boolean dirty);
-	
-	String getPageFile();
-	
-	/**
-	 * The index of the mapped page
-	 * 
-	 * @return the index
-	 */
-	long getPageIndex();
-	
-	/**
-	 * Persist any changes to disk
-	 */
-	public void flush();
+
+    /**
+     * Get a thread local copy of the mapped page buffer
+     * 
+     * @param position start position(relative to the start position of source mapped page buffer) of the thread local buffer
+     * @return a byte buffer with specific position as start position.
+     */
+    ByteBuffer getLocal(int position);
+
+    /**
+     * Get data from a thread local copy of the mapped page buffer
+     * 
+     * @param position start position(relative to the start position of source mapped page buffer) of the thread local buffer
+     * @param length the length to fetch
+     * @return byte data
+     */
+    public byte[] getLocal(int position, int length);
+
+    boolean isClosed();
+
+    void setDirty(boolean dirty);
+
+    String getPageFile();
+
+    /**
+     * The index of the mapped page
+     * 
+     * @return the index
+     */
+    long getPageIndex();
+
+    /**
+     * Persist any changes to disk
+     */
+    public void flush();
 }
