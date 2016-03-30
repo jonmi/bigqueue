@@ -33,16 +33,15 @@ Suppose the average message size is 1KB, then big queue can concurrently produci
 [here is a detailed performance report](https://github.com/bulldog2011/bigqueue/wiki/Performance-Test-Report)
 
 ##How to Use
-1. Direct jar or source reference  
-Download jar from repository mentioned in version history section below, latest stable release is [1.6.0.0](https://github.com/bulldog2011/bulldog-repo/tree/master/repo/releases/com/leansoft/bigqueue/0.7.0).   
+
 ***Note*** : bigqueue depends on log4j, please also added log4j jar reference if you use bigqueue.
 
-2. Maven reference  
+Maven reference  
 
 		<dependency>
-		  <groupId>se.ugli.bigqueue</groupId>
+		  <groupId>com.bluejeansnet.common</groupId>
 		  <artifactId>bigqueue</artifactId>
-                  <version>1.6.0.0</version>
+                  <version>1.7.0.0</version>
 		</dependency>
 
 ##Docs
@@ -58,6 +57,9 @@ Download jar from repository mentioned in version history section below, latest 
 9. [a big, fast and persistent queue[ppt]](http://www.slideshare.net/yang75108/a-big-fast-and-persistent-queue)
 
 ## Version History
+
+#### 1.7.0.0 - *March 30, 2016* :
+  * Feature: support dequeue multiple elements
 
 #### 0.7.0 - *March 24, 2013* : [repository](https://github.com/bulldog2011/bulldog-repo/tree/master/repo/releases/com/leansoft/bigqueue/0.7.0)
   * Feature: support fanout queue semantics
