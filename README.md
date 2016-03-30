@@ -41,7 +41,7 @@ Maven reference
 		<dependency>
 		  <groupId>com.bluejeansnet.common</groupId>
 		  <artifactId>bigqueue</artifactId>
-                  <version>1.7.0.0</version>
+          <version>1.7.0.1</version>
 		</dependency>
 
 ##Docs
@@ -58,7 +58,7 @@ Maven reference
 
 ## Version History
 
-#### 1.7.0.0 - *March 30, 2016* :
+#### 1.7.0.1 - *March 30, 2016* :
   * Feature: support dequeue multiple elements
 
 #### 0.7.0 - *March 24, 2013* : [repository](https://github.com/bulldog2011/bulldog-repo/tree/master/repo/releases/com/leansoft/bigqueue/0.7.0)
