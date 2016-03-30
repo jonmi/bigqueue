@@ -1,17 +1,17 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
-	<groupId>se.ugli.bigqueue</groupId>
+	<groupId>com.bluejeans.common</groupId>
 	<artifactId>bigqueue</artifactId>
-	<version>1.6.0.0</version>
+	<version>1.7.0.0</version>
 	<name>bigqueue</name>
-	<url>https://github.com/ugli/bigqueue</url>
+	<url>https://github.com/bluejeansnet/bigqueue</url>
 	<description>Light, fast and persistent queue.</description>
 	<scm>
-		<connection>scm:git:git://github.com/ugli/bigqueue.git</connection>
-		<developerConnection>scm:git:git@github.com:ugli/bigqueue.git</developerConnection>
-		<url>https://github.com/ugli/bigqueue</url>
-		<tag>1.6.0.0</tag>
+		<connection>scm:git:git://github.com/bluejeansnet/bigqueue.git</connection>
+		<developerConnection>scm:git:git@github.com:bluejeansnet/bigqueue.git</developerConnection>
+		<url>https://github.com/bluejeansnet/bigqueue</url>
+		<tag>1.7.0.0</tag>
 	</scm>
 	<licenses>
 		<license>
@@ -34,6 +34,14 @@
 			<id>fredrikkivi</id>
 			<name>Fredrik Kivi</name>
 			<email>fredrik.kivi@ugli.se</email>
+			<roles>
+				<role>developer</role>
+			</roles>
+		</developer>
+		<developer>
+			<id>ilndinesh</id>
+			<name>Dinesh Ilindra</name>
+			<email>ilndinesh@gmail.com</email>
 			<roles>
 				<role>developer</role>
 			</roles>

@@ -3,6 +3,8 @@ package se.ugli.bigqueue;
 import java.io.Closeable;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -13,12 +15,13 @@ import com.google.common.util.concurrent.SettableFuture;
 /**
  * A big, fast and persistent queue implementation.
  *
- * Main features:
- * 1. FAST : close to the speed of direct memory access, both enqueue and dequeue are close to O(1) memory access.
- * 2. MEMORY-EFFICIENT : automatic paging and swapping algorithm, only most-recently accessed data is kept in memory.
- * 3. THREAD-SAFE : multiple threads can concurrently enqueue and dequeue without data corruption.
- * 4. PERSISTENT - all data in queue is persisted on disk, and is crash resistant.
- * 5. BIG(HUGE) - the total size of the queued data is only limited by the available disk space.
+ * Main features: 1. FAST : close to the speed of direct memory access, both
+ * enqueue and dequeue are close to O(1) memory access. 2. MEMORY-EFFICIENT :
+ * automatic paging and swapping algorithm, only most-recently accessed data is
+ * kept in memory. 3. THREAD-SAFE : multiple threads can concurrently enqueue
+ * and dequeue without data corruption. 4. PERSISTENT - all data in queue is
+ * persisted on disk, and is crash resistant. 5. BIG(HUGE) - the total size of
+ * the queued data is only limited by the available disk space.
  *
  * @author bulldog
  */
@@ -51,11 +54,14 @@ public class BigQueue implements Closeable {
     private SettableFuture<byte[]> peekFuture;
 
     /**
-     * A big, fast and persistent queue implementation,
-     * use default back data page size, see {@link BigArray#DEFAULT_DATA_PAGE_SIZE}
+     * A big, fast and persistent queue implementation, use default back data
+     * page size, see {@link BigArray#DEFAULT_DATA_PAGE_SIZE}
      *
-     * @param queueDir  the directory to store queue data
-     * @param queueName the name of the queue, will be appended as last part of the queue directory
+     * @param queueDir
+     *            the directory to store queue data
+     * @param queueName
+     *            the name of the queue, will be appended as last part of the
+     *            queue directory
      */
     public BigQueue(final String queueDir, final String queueName) {
         this(queueDir, queueName, BigArray.DEFAULT_DATA_PAGE_SIZE);
@@ -64,17 +70,23 @@ public class BigQueue implements Closeable {
     /**
      * A big, fast and persistent queue implementation.
      *
-     * @param queueDir  the directory to store queue data
-     * @param queueName the name of the queue, will be appended as last part of the queue directory
-     * @param pageSize  the back data file size per page in bytes, see minimum allowed {@link BigArray#MINIMUM_DATA_PAGE_SIZE}
+     * @param queueDir
+     *            the directory to store queue data
+     * @param queueName
+     *            the name of the queue, will be appended as last part of the
+     *            queue directory
+     * @param pageSize
+     *            the back data file size per page in bytes, see minimum allowed
+     *            {@link BigArray#MINIMUM_DATA_PAGE_SIZE}
      */
     public BigQueue(final String queueDir, final String queueName, final int pageSize) {
         innerArray = new BigArray(queueDir, queueName, pageSize);
 
-        // the ttl does not matter here since queue front index page is always cached
-        this.queueFrontIndexPageFactory = new MappedPageFactory(QUEUE_FRONT_INDEX_PAGE_SIZE,
-                innerArray.getArrayDirectory() + QUEUE_FRONT_INDEX_PAGE_FOLDER, 10 * 1000/*does not matter*/);
-        final MappedPage queueFrontIndexPage = this.queueFrontIndexPageFactory.acquirePage(QUEUE_FRONT_PAGE_INDEX);
+        // the ttl does not matter here since queue front index page is always
+        // cached
+        queueFrontIndexPageFactory = new MappedPageFactory(QUEUE_FRONT_INDEX_PAGE_SIZE, innerArray.getArrayDirectory()
+                + QUEUE_FRONT_INDEX_PAGE_FOLDER, 10 * 1000/* does not matter */);
+        final MappedPage queueFrontIndexPage = queueFrontIndexPageFactory.acquirePage(QUEUE_FRONT_PAGE_INDEX);
 
         final ByteBuffer queueFrontIndexBuffer = queueFrontIndexPage.getLocal(0);
         final long front = queueFrontIndexBuffer.getLong();
@@ -88,17 +100,18 @@ public class BigQueue implements Closeable {
      */
 
     public boolean isEmpty() {
-        return this.queueFrontIndex.get() == this.innerArray.getHeadIndex();
+        return queueFrontIndex.get() == innerArray.getHeadIndex();
     }
 
     /**
      * Adds an item at the back of a queue
      *
-     * @param data to be enqueued data
+     * @param data
+     *            to be enqueued data
      */
 
     public void enqueue(final byte[] data) {
-        this.innerArray.append(data);
+        innerArray.append(data);
 
         this.completeFutures();
     }
@@ -113,24 +126,67 @@ public class BigQueue implements Closeable {
         long queueFrontIndex = -1L;
         try {
             queueFrontWriteLock.lock();
-            if (this.isEmpty())
+            if (this.isEmpty()) {
                 return null;
+            }
             queueFrontIndex = this.queueFrontIndex.get();
-            final byte[] data = this.innerArray.get(queueFrontIndex);
+            final byte[] data = innerArray.get(queueFrontIndex);
             long nextQueueFrontIndex = queueFrontIndex;
-            if (nextQueueFrontIndex == Long.MAX_VALUE)
+            if (nextQueueFrontIndex == Long.MAX_VALUE) {
                 nextQueueFrontIndex = 0L; // wrap
-            else
+            } else {
                 nextQueueFrontIndex++;
+            }
             this.queueFrontIndex.set(nextQueueFrontIndex);
             // persist the queue front
-            final MappedPage queueFrontIndexPage = this.queueFrontIndexPageFactory.acquirePage(QUEUE_FRONT_PAGE_INDEX);
+            final MappedPage queueFrontIndexPage = queueFrontIndexPageFactory.acquirePage(QUEUE_FRONT_PAGE_INDEX);
             final ByteBuffer queueFrontIndexBuffer = queueFrontIndexPage.getLocal(0);
             queueFrontIndexBuffer.putLong(nextQueueFrontIndex);
             queueFrontIndexPage.setDirty(true);
             return data;
+        } finally {
+            queueFrontWriteLock.unlock();
         }
-        finally {
+
+    }
+
+    /**
+     * Retrieves and removes the fronts of a queue upto given total number /
+     * total size whichever is smaller
+     *
+     * @param max
+     *            the maximum to dequque
+     * @return data at the fronts of a queue
+     */
+
+    public List<byte[]> dequeueMulti(final int max) {
+        long queueFrontIndex = -1L;
+        final List<byte[]> dataList = new ArrayList<byte[]>();
+        try {
+            queueFrontWriteLock.lock();
+            final long size = size();
+            for (int i = 0; i < max && i < size; i++) {
+                if (!this.isEmpty()) {
+                    queueFrontIndex = this.queueFrontIndex.get();
+                    final byte[] data = innerArray.get(queueFrontIndex);
+                    dataList.add(data);
+                    long nextQueueFrontIndex = queueFrontIndex;
+                    if (nextQueueFrontIndex == Long.MAX_VALUE) {
+                        nextQueueFrontIndex = 0L; // wrap
+                    } else {
+                        nextQueueFrontIndex++;
+                    }
+                    this.queueFrontIndex.set(nextQueueFrontIndex);
+                    // persist the queue front
+                    final MappedPage queueFrontIndexPage = queueFrontIndexPageFactory
+                            .acquirePage(QUEUE_FRONT_PAGE_INDEX);
+                    final ByteBuffer queueFrontIndexBuffer = queueFrontIndexPage.getLocal(0);
+                    queueFrontIndexBuffer.putLong(nextQueueFrontIndex);
+                    queueFrontIndexPage.setDirty(true);
+                }
+            }
+            return dataList;
+        } finally {
             queueFrontWriteLock.unlock();
         }
 
@@ -139,10 +195,13 @@ public class BigQueue implements Closeable {
     /**
      * Retrieves a Future which will complete if new Items where enqued.
      *
-     * Use this method to retrieve a future where to register as Listener instead of repeatedly polling the queues state.
-     * On complete this future contains the result of the dequeue operation. Hence the item was automatically removed from the queue.
+     * Use this method to retrieve a future where to register as Listener
+     * instead of repeatedly polling the queues state. On complete this future
+     * contains the result of the dequeue operation. Hence the item was
+     * automatically removed from the queue.
      *
-     * @return a ListenableFuture which completes with the first entry if items are ready to be dequeued.
+     * @return a ListenableFuture which completes with the first entry if items
+     *         are ready to be dequeued.
      */
 
     public ListenableFuture<byte[]> dequeueAsync() {
@@ -151,20 +210,20 @@ public class BigQueue implements Closeable {
     }
 
     /**
-     * Removes all items of a queue, this will empty the queue and delete all back data files.
+     * Removes all items of a queue, this will empty the queue and delete all
+     * back data files.
      */
 
     public void removeAll() {
         try {
             queueFrontWriteLock.lock();
-            this.innerArray.removeAll();
-            this.queueFrontIndex.set(0L);
-            final MappedPage queueFrontIndexPage = this.queueFrontIndexPageFactory.acquirePage(QUEUE_FRONT_PAGE_INDEX);
+            innerArray.removeAll();
+            queueFrontIndex.set(0L);
+            final MappedPage queueFrontIndexPage = queueFrontIndexPageFactory.acquirePage(QUEUE_FRONT_PAGE_INDEX);
             final ByteBuffer queueFrontIndexBuffer = queueFrontIndexPage.getLocal(0);
             queueFrontIndexBuffer.putLong(0L);
             queueFrontIndexPage.setDirty(true);
-        }
-        finally {
+        } finally {
             queueFrontWriteLock.unlock();
         }
     }
@@ -176,17 +235,20 @@ public class BigQueue implements Closeable {
      */
 
     public byte[] peek() {
-        if (this.isEmpty())
+        if (this.isEmpty()) {
             return null;
-        final byte[] data = this.innerArray.get(this.queueFrontIndex.get());
+        }
+        final byte[] data = innerArray.get(queueFrontIndex.get());
         return data;
     }
 
     /**
-     * Retrieves the item at the front of a queue asynchronously.
-     * On complete the value set in this future is the result of the peek operation. Hence the item remains at the front of the list.
+     * Retrieves the item at the front of a queue asynchronously. On complete
+     * the value set in this future is the result of the peek operation. Hence
+     * the item remains at the front of the list.
      *
-     * @return a future containing the first item if available. You may register as listener at this future to be informed if a new item arrives.
+     * @return a future containing the first item if available. You may register
+     *         as listener at this future to be informed if a new item arrives.
      */
 
     public ListenableFuture<byte[]> peekAsync() {
@@ -197,54 +259,60 @@ public class BigQueue implements Closeable {
     public void applyForEach(final ItemIterator iterator) {
         try {
             queueFrontWriteLock.lock();
-            if (this.isEmpty())
+            if (this.isEmpty()) {
                 return;
+            }
 
-            final long index = this.queueFrontIndex.get();
-            for (long i = index; i < this.innerArray.size(); i++)
-                iterator.forEach(this.innerArray.get(i));
-        }
-        finally {
+            final long index = queueFrontIndex.get();
+            for (long i = index; i < innerArray.size(); i++) {
+                iterator.forEach(innerArray.get(i));
+            }
+        } finally {
             queueFrontWriteLock.unlock();
         }
     }
 
     @Override
     public void close() throws IOException {
-        if (this.queueFrontIndexPageFactory != null)
-            this.queueFrontIndexPageFactory.releaseCachedPages();
-
-        synchronized (futureLock) {
-            /* Cancel the future but don't interrupt running tasks
-            because they might perform further work not refering to the queue
-             */
-            if (peekFuture != null)
-                peekFuture.cancel(false);
-            if (dequeueFuture != null)
-                dequeueFuture.cancel(false);
+        if (queueFrontIndexPageFactory != null) {
+            queueFrontIndexPageFactory.releaseCachedPages();
         }
 
-        this.innerArray.close();
+        synchronized (futureLock) {
+            /*
+             * Cancel the future but don't interrupt running tasks because they
+             * might perform further work not refering to the queue
+             */
+            if (peekFuture != null) {
+                peekFuture.cancel(false);
+            }
+            if (dequeueFuture != null) {
+                dequeueFuture.cancel(false);
+            }
+        }
+
+        innerArray.close();
     }
 
     /**
      * Delete all used data files to free disk space.
      *
-     * BigQueue will persist enqueued data in disk files, these data files will remain even after
-     * the data in them has been dequeued later, so your application is responsible to periodically call
-     * this method to delete all used data files and free disk space.
+     * BigQueue will persist enqueued data in disk files, these data files will
+     * remain even after the data in them has been dequeued later, so your
+     * application is responsible to periodically call this method to delete all
+     * used data files and free disk space.
      */
 
     public void gc() {
-        long beforeIndex = this.queueFrontIndex.get();
-        if (beforeIndex == 0L)
+        long beforeIndex = queueFrontIndex.get();
+        if (beforeIndex == 0L) {
             beforeIndex = Long.MAX_VALUE;
-        else
+        } else {
             beforeIndex--;
-        try {
-            this.innerArray.removeBeforeIndex(beforeIndex);
         }
-        catch (final IndexOutOfBoundsException ex) {
+        try {
+            innerArray.removeBeforeIndex(beforeIndex);
+        } catch (final IndexOutOfBoundsException ex) {
             // ignore
         }
     }
@@ -252,20 +320,21 @@ public class BigQueue implements Closeable {
     /**
      * Force to persist current state of the queue,
      *
-     * normally, you don't need to flush explicitly since:
-     * 1.) BigQueue will automatically flush a cached page when it is replaced out,
-     * 2.) BigQueue uses memory mapped file technology internally, and the OS will flush the changes even your process crashes,
+     * normally, you don't need to flush explicitly since: 1.) BigQueue will
+     * automatically flush a cached page when it is replaced out, 2.) BigQueue
+     * uses memory mapped file technology internally, and the OS will flush the
+     * changes even your process crashes,
      *
-     * call this periodically only if you need transactional reliability and you are aware of the cost to performance.
+     * call this periodically only if you need transactional reliability and you
+     * are aware of the cost to performance.
      */
 
     public void flush() {
         try {
             queueFrontWriteLock.lock();
-            this.queueFrontIndexPageFactory.flush();
-            this.innerArray.flush();
-        }
-        finally {
+            queueFrontIndexPageFactory.flush();
+            innerArray.flush();
+        } finally {
             queueFrontWriteLock.unlock();
         }
 
@@ -273,16 +342,18 @@ public class BigQueue implements Closeable {
 
     /**
      * Total number of items available in the queue.
+     *
      * @return total number
      */
 
     public long size() {
-        final long qFront = this.queueFrontIndex.get();
-        final long qRear = this.innerArray.getHeadIndex();
-        if (qFront <= qRear)
+        final long qFront = queueFrontIndex.get();
+        final long qRear = innerArray.getHeadIndex();
+        if (qFront <= qRear) {
             return qRear - qFront;
-        else
+        } else {
             return Long.MAX_VALUE - qFront + 1 + qRear;
+        }
     }
 
     /**
@@ -290,10 +361,12 @@ public class BigQueue implements Closeable {
      */
     private void completeFutures() {
         synchronized (futureLock) {
-            if (peekFuture != null && !peekFuture.isDone())
+            if (peekFuture != null && !peekFuture.isDone()) {
                 peekFuture.set(this.peek());
-            if (dequeueFuture != null && !dequeueFuture.isDone())
+            }
+            if (dequeueFuture != null && !dequeueFuture.isDone()) {
                 dequeueFuture.set(this.dequeue());
+            }
         }
     }
 
@@ -302,10 +375,12 @@ public class BigQueue implements Closeable {
      */
     private void initializeDequeueFutureIfNecessary() {
         synchronized (futureLock) {
-            if (dequeueFuture == null || dequeueFuture.isDone())
+            if (dequeueFuture == null || dequeueFuture.isDone()) {
                 dequeueFuture = SettableFuture.create();
-            if (!this.isEmpty())
+            }
+            if (!this.isEmpty()) {
                 dequeueFuture.set(this.dequeue());
+            }
         }
     }
 
@@ -314,10 +389,12 @@ public class BigQueue implements Closeable {
      */
     private void initializePeekFutureIfNecessary() {
         synchronized (futureLock) {
-            if (peekFuture == null || peekFuture.isDone())
+            if (peekFuture == null || peekFuture.isDone()) {
                 peekFuture = SettableFuture.create();
-            if (!this.isEmpty())
+            }
+            if (!this.isEmpty()) {
                 peekFuture.set(this.peek());
+            }
         }
     }
 
