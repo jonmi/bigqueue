@@ -255,13 +255,17 @@ public class BigQueue implements Closeable {
         final long size = size();
         final long queueFront = queueFrontIndex.get();
         byte[] data = null;
-        for (int i = 0; i < max && i < size; i++) {
-            data = innerArray.get(queueFront - i);
-            if (data == null) {
-                break;
-            } else {
-                dataList.add(data);
+        try {
+            for (int i = 0; i < max && i < size; i++) {
+                data = innerArray.get(queueFront - i);
+                if (data == null) {
+                    break;
+                } else {
+                    dataList.add(data);
+                }
             }
+        } catch (final RuntimeException rex) {
+            // do nothing
         }
         return dataList;
     }

@@ -58,7 +58,7 @@ Maven reference
 
 ## Version History
 
-#### 1.7.0.3 - *March 31, 2016* :
+#### 1.7.0.4 - *March 31, 2016* :
   * Feature: support peek multiple elements
 
 #### 1.7.0.2 - *March 30, 2016* :
