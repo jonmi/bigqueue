@@ -243,6 +243,30 @@ public class BigQueue implements Closeable {
     }
 
     /**
+     * Retrieves the items at the front of a queue
+     *
+     * @param max
+     *            the maximum elements to peek
+     * @return data at the front of a queue
+     */
+
+    public List<byte[]> peekMulti(final int max) {
+        final List<byte[]> dataList = new ArrayList<byte[]>();
+        final long size = size();
+        final long queueFront = queueFrontIndex.get();
+        byte[] data = null;
+        for (int i = 0; i < max && i < size; i++) {
+            data = innerArray.get(queueFront - i);
+            if (data == null) {
+                break;
+            } else {
+                dataList.add(data);
+            }
+        }
+        return dataList;
+    }
+
+    /**
      * Retrieves the item at the front of a queue asynchronously. On complete
      * the value set in this future is the result of the peek operation. Hence
      * the item remains at the front of the list.
