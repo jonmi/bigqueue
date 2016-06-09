@@ -257,7 +257,7 @@ public class BigQueue implements Closeable {
         byte[] data = null;
         try {
             for (int i = 0; i < max && i < size; i++) {
-                data = innerArray.get(queueFront - i);
+                data = innerArray.get(queueFront + i);
                 if (data == null) {
                     break;
                 } else {
