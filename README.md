@@ -39,9 +39,9 @@ Suppose the average message size is 1KB, then big queue can concurrently produci
 Maven reference  
 
 		<dependency>
-		  <groupId>com.bluejeansnet.common</groupId>
+		  <groupId>com.bluejeansnet</groupId>
 		  <artifactId>bigqueue</artifactId>
-          <version>1.7.0.2</version>
+          <version>1.7.0.6</version>
 		</dependency>
 
 ##Docs
@@ -57,6 +57,9 @@ Maven reference
 9. [a big, fast and persistent queue[ppt]](http://www.slideshare.net/yang75108/a-big-fast-and-persistent-queue)
 
 ## Version History
+
+#### 1.7.0.6 - *Jun 23, 2016* :
+  * Fix: support peek multiple elements
 
 #### 1.7.0.4 - *March 31, 2016* :
   * Feature: support peek multiple elements
