@@ -113,6 +113,46 @@ public class BigArrayUnitTest {
     }
 
     @Test
+    public void removeBeforeIndexErrorTest() {
+        bigArray = new BigArray(testDir, "remove_before_index_test");
+        assertNotNull(bigArray);
+
+        final int loop = 1000000;
+        for (int i = 0; i < loop; i++){
+            bigArray.append(("" + 1).getBytes());
+            bigArray.append(("" + 2).getBytes());
+            bigArray.append(("" + 3).getBytes());
+            bigArray.append(("" + 4).getBytes());
+            bigArray.append(("" + 5).getBytes());
+        }
+
+        final int half = loop * 5 / 2;
+        bigArray.removeBeforeIndex(half);
+        assertTrue(half == bigArray.getTailIndex());
+        assertTrue(half == bigArray.size());
+        assertEquals(1 + "", new String(bigArray.get(half)));
+        assertEquals(2 + "", new String(bigArray.get(half + 1)));
+        try {
+            bigArray.get(half - 1);
+            fail("IndexOutOfBoundsException should be thrown here");
+        }
+        catch (final IndexOutOfBoundsException ex) {
+        }
+
+        final long last = (loop * 5) - 1;
+        bigArray.removeBeforeIndex(last);
+        assertTrue(last == bigArray.getTailIndex());
+        assertTrue(1 == bigArray.size());
+        assertEquals(5 + "", new String(bigArray.get(last)));
+        try {
+            bigArray.get(last - 1);
+            fail("IndexOutOfBoundsException should be thrown here");
+        }
+        catch (final IndexOutOfBoundsException ex) {
+        }
+    }
+
+    @Test
     public void removeBeforeTest() {
         bigArray = new BigArray(testDir, "remove_before_test");
         assertNotNull(bigArray);

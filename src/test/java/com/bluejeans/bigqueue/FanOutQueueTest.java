@@ -205,7 +205,7 @@ public class FanOutQueueTest {
     }
 
     @Test
-    @Ignore
+    @Ignore("Doesn't work properly")
     public void removeBeforeTest() {
         foQueue = new FanOutQueue(testDir, "remove_before", BigArray.MINIMUM_DATA_PAGE_SIZE);
 
@@ -222,17 +222,48 @@ public class FanOutQueueTest {
             foQueue.enqueue(randomString2.getBytes());
 
         foQueue.removeBefore(timestamp);
-
+        assertTrue(foQueue.size(fid) == 1024 * 1024);
         timestamp = System.currentTimeMillis();
         final String randomString3 = TestUtil.randomString(32);
         for (int i = 0; i < 1024 * 1024; i++)
             foQueue.enqueue(randomString3.getBytes());
 
         foQueue.removeBefore(timestamp);
-
+        // I don't understand why he multiplies by two the size. It will be only 1024*1024 elements because you have remove all the elements of randomString2.
         assertTrue(foQueue.size(fid) == 2 * 1024 * 1024);
         assertEquals(randomString2, new String(foQueue.peek(fid)));
     }
+
+    @Test
+    public void removeBeforeIndexTest() {
+        foQueue = new FanOutQueue(testDir, "remove_before_by_index", BigArray.MINIMUM_DATA_PAGE_SIZE);
+
+        final String randomString1 = TestUtil.randomString(32);
+        Long index = null;
+        for (int i = 0; i < 22 * 22; i++)
+            index = foQueue.enqueue(randomString1.getBytes());
+
+        final String fid = "removeBeforeByIndexTest";
+        assertTrue(foQueue.size(fid) == 22 * 22);
+
+        final String randomString2 = TestUtil.randomString(32);
+        Long index2 = null;
+        for (int i = 0; i < 22 * 22; i++)
+            index2 = foQueue.enqueue(randomString2.getBytes());
+
+        foQueue.removeBeforeByIndex(index+1);
+        assertTrue(foQueue.size(fid) == 22 * 22);
+        assertEquals(randomString2, new String(foQueue.peek(fid)));
+        final String randomString3 = TestUtil.randomString(32);
+        for (int i = 0; i < 22 * 22; i++)
+            foQueue.enqueue(randomString3.getBytes());
+
+        foQueue.removeBeforeByIndex(index2+1);
+        // I don't understand why he multiplies by two the size. It will be only 1024*1024 elements because you have remove all the elements of randomString2.
+        assertTrue(foQueue.size(fid) == 22 * 22);
+        assertEquals(randomString3, new String(foQueue.peek(fid)));
+    }
+
 
     @Test
     public void findClosestIndexTest() {

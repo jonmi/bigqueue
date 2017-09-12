@@ -287,6 +287,30 @@ public class FanOutQueue implements Closeable {
     }
 
     /**
+     * Remove all data before specific timestamp, truncate back files and advance the queue front if necessary.
+     *
+     * @param index a index
+     */
+    public void removeBeforeByIndex(final long index) {
+        try {
+            this.innerArray.arrayWriteLock.lock();
+
+            this.innerArray.removeBeforeIndex(index);
+            for (final QueueFront qf : this.queueFrontMap.values())
+                try {
+                    qf.writeLock.lock();
+                    qf.validateAndAdjustIndex();
+                }
+                finally {
+                    qf.writeLock.unlock();
+                }
+        }
+        finally {
+            this.innerArray.arrayWriteLock.unlock();
+        }
+    }
+
+    /**
      * Limit the back file size of this queue, truncate back files and advance the queue front if necessary.
      *
      * Note, this is a best effort call, exact size limit can't be guaranteed
